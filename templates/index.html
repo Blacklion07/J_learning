@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice AI Assistant</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --primary: #00e5ff;
+            --secondary: #b400ff;
+            --danger: #ff0055;
+            --glass-bg: rgba(20, 25, 40, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: white;
+        }
+
+        /* Orqa fondagi harakatlanuvchi rangli sharlar */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.6;
+            animation: float 10s infinite alternate ease-in-out;
+        }
+
+        .blob-1 {
+            width: 400px; height: 400px;
+            background: var(--primary);
+            top: -100px; left: -100px;
+        }
+
+        .blob-2 {
+            width: 300px; height: 300px;
+            background: var(--secondary);
+            bottom: -50px; right: -50px;
+            animation-delay: -5s;
+        }
+
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(50px, 50px) scale(1.2); }
+        }
+
+        /* Asosiy chat oynasi */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            width: 400px;
+            height: 650px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            font-weight: 600;
+            font-size: 24px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 1px;
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 5px;
+            height: 15px;
+        }
+
+        /* AI Markaziy shar (Orb) */
+        .ai-orb-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .ai-orb {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--primary) 0%, transparent 70%);
+            box-shadow: 0 0 40px var(--primary), inset 0 0 20px rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            transition: all 0.4s ease;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            animation: breathe 3s infinite ease-in-out;
+        }
+
+        .ai-orb:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 60px var(--primary);
+        }
+
+        /* Eshitish rejimi */
+        .ai-orb.listening {
+            background: radial-gradient(circle, var(--danger) 0%, transparent 70%);
+            box-shadow: 0 0 50px var(--danger);
+            animation: pulse-ring 1s infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(255, 0, 85, 0.6); }
+            70% { box-shadow: 0 0 0 30px rgba(255, 0, 85, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 0, 85, 0); }
+        }
+
+        /* Matn maydoni */
+        .ai-text-box {
+            min-height: 100px;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            border-left: 3px solid var(--primary);
+            font-size: 15px;
+            line-height: 1.6;
+            color: #ccd6f6;
+            text-align: left;
+            overflow-y: auto;
+        }
+
+        .ai-text-box strong {
+            color: var(--primary);
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Kiritish maydoni */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.4);
+            padding: 8px;
+            border-radius: 20px;
+            border: 1px solid var(--glass-border);
+        }
+
+        input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        input::placeholder {
+            color: #64748b;
+        }
+
+        .btn-send {
+            background: linear-gradient(45deg, var(--primary), #0088ff);
+            border: none;
+            border-radius: 15px;
+            width: 40px;
+            height: 40px;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-send:hover {
+            transform: scale(1.1) rotate(-10deg);
+        }
+
+        /* Ovozni to'xtatish tugmasi */
+        .btn-mute {
+            background: transparent;
+            color: #64748b;
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 15px;
+            text-align: center;
+            width: 100%;
+            transition: color 0.3s;
+        }
+
+        .btn-mute:hover {
+            color: white;
+        }
+
+        /* Yozish kursorining miltillashi */
+        .cursor {
+            display: inline-block;
+            width: 2px;
+            height: 15px;
+            background-color: var(--primary);
+            animation: blink 0.7s infinite;
+            vertical-align: middle;
+            margin-left: 3px;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="app-container">
+    <div class="header">
+        <h2>NEXUS AI</h2>
+        <div class="status-text" id="statusText">Tizim tayyor</div>
+    </div>
+
+    <div class="ai-orb-container">
+        <div class="ai-orb" id="micBtn" onclick="startListening()">🎤</div>
+    </div>
+
+    <div class="ai-text-box">
+        <strong>AI JAVOBI:</strong>
+        <span id="aiText">Salom! Men sizning shaxsiy yordamchigizman.</span><span class="cursor" id="cursor"></span>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="userInput" placeholder="Suhbatni boshlang..." autocomplete="off" onkeypress="handleEnter(event)">
+        <button class="btn-send" onclick="sendMessage()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        </button>
+    </div>
+
+    <button class="btn-mute" onclick="stopSpeech()">🔇 Ovozni to'xtatish</button>
+</div>
+
+<script>
+let utterance = null;
+const aiTextSpan = document.getElementById("aiText");
+const micBtn = document.getElementById("micBtn");
+const userInput = document.getElementById("userInput");
+const statusText = document.getElementById("statusText");
+const cursor = document.getElementById("cursor");
+
+// Enter tugmasini bosganda yuborish
+function handleEnter(e) {
+    if (e.key === "Enter") sendMessage();
+}
+
+// Typing Effect (Matnni harfma-harf chiqarish)
+function typeWriter(text, i = 0) {
+    if (i === 0) {
+        aiTextSpan.innerHTML = "";
+        cursor.style.display = "inline-block";
+    }
+    if (i < text.length) {
+        aiTextSpan.innerHTML += text.charAt(i);
+        setTimeout(() => typeWriter(text, i + 1), 30); // 30ms tezlik
+    } else {
+        cursor.style.display = "none";
+    }
+}
+
+// 1. XABAR YUBORISH
+async function sendMessage() {
+    const text = userInput.value.trim();
+    if (!text) return;
+    // 1) WebApp rejimida: FastAPI o'zi index.html serve qilsa -> BASE_URL = ""
+// 2) APK/WebView rejimida: backend URL qo'yiladi -> BASE_URL = "https://xxxx.onrender.com"
+// const BASE_URL = ""; // WebApp uchun bo'sh qoldir
+
+const BASE_URL = "https://YOUR-BACKEND.onrender.com"; // APK uchun shu qatorni yoq
+
+const res = await fetch(`${BASE_URL}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: text })
+});
+
+    userInput.value = "";
+    statusText.innerText = "O'ylanmoqda...";
+    statusText.style.color = "#00e5ff";
+    stopSpeech();
+
+    // Yozish effektini tozalash va kutish holati
+    aiTextSpan.innerHTML = "O'ylanmoqda...";
+    cursor.style.display = "inline-block";
+
+    try {
+        const res = await fetch("/chat", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: text })
+        });
+
+        const data = await res.json();
+        const responseText = data.response;
+
+        statusText.innerText = "Javob berilmoqda";
+        statusText.style.color = "#b400ff";
+
+        // Javobni harfma-harf yozish
+        typeWriter(responseText);
+        speak(responseText);
+
+    } catch (error) {
+        aiTextSpan.innerText = "Aloqa uzildi. Tizimda xatolik.";
+        statusText.innerText = "Xatolik!";
+        statusText.style.color = "#ff0055";
+    }
+}
+
+// 2. GAPIRISH (TTS)
+function speak(text) {
+    stopSpeech();
+    utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.1;
+
+    utterance.onend = () => {
+        statusText.innerText = "Tizim tayyor";
+        statusText.style.color = "#8892b0";
+    };
+
+    window.speechSynthesis.speak(utterance);
+}
+
+function stopSpeech() {
+    if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+        statusText.innerText = "Tizim tayyor";
+        statusText.style.color = "#8892b0";
+    }
+}
+
+// 3. OVOZNI ESHITISH (STT)
+function startListening() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+        alert("Brauzeringiz ovozli buyruqlarni qo'llab-quvvatlamaydi.");
+        return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "uz-UZ";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = function() {
+        micBtn.classList.add("listening");
+        statusText.innerText = "Sizni eshityapman...";
+        statusText.style.color = "#ff0055";
+        stopSpeech();
+    };
+
+    recognition.onresult = function(event) {
+        const transcript = event.results[0][0].transcript;
+        userInput.value = transcript;
+        micBtn.classList.remove("listening");
+
+        // Gapirib bo'lgach avtomat jo'natish
+        sendMessage();
+    };
+
+    recognition.onerror = function(event) {
+        micBtn.classList.remove("listening");
+        statusText.innerText = "Ovozni aniqlab bo'lmadi";
+        statusText.style.color = "#8892b0";
+    };
+
+    recognition.onend = function() {
+        micBtn.classList.remove("listening");
+        if(statusText.innerText === "Sizni eshityapman...") {
+            statusText.innerText = "Tizim tayyor";
+            statusText.style.color = "#8892b0";
+        }
+    };
+
+    recognition.start();
+}
+</script>
+
+</body>
+</html>
