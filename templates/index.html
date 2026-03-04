@@ -6,7 +6,6 @@
   <title>LowtabAI — Персонажи</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
-    /* UI o‘sha-o‘sha (siz yoqtirgan) */
     :root{
       --bg:#070a12; --glass: rgba(255,255,255,.06); --border: rgba(255,255,255,.12);
       --text:#eaf2ff; --muted:#a6b6d6; --p:#00e5ff; --s:#b400ff; --danger:#ff0055;
@@ -31,12 +30,12 @@
     @keyframes float{ from{transform:translate(0,0) scale(1)} to{transform:translate(80px,60px) scale(1.06)} }
     .app{position:absolute; inset:0; padding: 22px; display:flex; flex-direction:column; gap: 14px; z-index:1;}
     .topbar{display:flex; align-items:center; justify-content:space-between; padding: 14px 16px;
-      background: var(--glass); border:1px solid var(--border); border-radius: var(--r); backdrop-filter: blur(16px);}
+      background: var(--glass); border:1px solid var(--border); border-radius: var(--r); backdrop-filter: blur(16px); gap:12px;}
     .brand{display:flex; flex-direction:column; gap:2px;}
     .brand .t{font-weight:800; letter-spacing:.5px; font-size:18px}
     .brand .s{font-size:12px; color:var(--muted)}
     .who{font-size:12px; color:var(--muted); padding: 10px 12px; border:1px solid var(--border);
-      border-radius: 999px; background: rgba(0,0,0,.25);}
+      border-radius: 999px; background: rgba(0,0,0,.25); white-space:nowrap;}
     .main{flex:1; display:grid; grid-template-columns: 1.15fr .85fr; gap: 14px; min-height: 0;}
     .panel{background: var(--glass); border:1px solid var(--border); border-radius: var(--r);
       backdrop-filter: blur(16px); overflow:hidden; min-height: 0; display:flex; flex-direction:column;}
@@ -61,7 +60,19 @@
     .cardInfo .name{font-weight:800}
     .cardInfo .tag{font-size:12px; color: rgba(255,255,255,.78); margin-top:3px}
     .panelFooter{margin-top:auto; padding: 12px 14px; border-top:1px solid rgba(255,255,255,.10);
-      font-size:12px; color: var(--muted);}
+      font-size:12px; color: var(--muted); display:flex; flex-direction:column; gap:8px;}
+    .voiceRow{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .voiceRow .lbl{font-size:12px; color:var(--muted)}
+    select{
+      padding: 10px 12px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.20);
+      color: var(--text);
+      outline:none;
+      min-width: 260px;
+    }
+
     .chatWrap{background: var(--glass); border:1px solid var(--border); border-radius: var(--r);
       backdrop-filter: blur(16px); display:flex; flex-direction:column; overflow:hidden; min-height: 0;}
     .chatHead{padding: 14px 16px; border-bottom:1px solid rgba(255,255,255,.10);
@@ -82,10 +93,12 @@
     input::placeholder{ color: rgba(255,255,255,.45); }
     .mic{ width: 54px; background: linear-gradient(45deg,#ff512f,#dd2476); border:none; }
     .send{ width: 54px; border:none; background: linear-gradient(45deg, var(--p), #0088ff); }
+
     @media (max-width: 980px){
       .main{ grid-template-columns: 1fr; }
       .grid{ grid-template-columns: repeat(2, 1fr); }
       .card{ height: 150px; }
+      select{ min-width: 220px; }
     }
   </style>
 </head>
@@ -96,7 +109,7 @@
       <div class="topbar">
         <div class="brand">
           <div class="t">LOWTAB AI</div>
-          <div class="s">Русская озвучка • чистим символы • харизма по персонажу</div>
+          <div class="s">Персонажный голос • меньше “робота” • длинные ответы читаются полностью</div>
         </div>
         <div class="who" id="who">Персонаж: не выбран</div>
       </div>
@@ -108,8 +121,14 @@
             <div class="note">3 сверху + 3 снизу</div>
           </div>
           <div class="grid" id="grid"></div>
+
           <div class="panelFooter">
-            Истории чатов сохраняются на этом устройстве. Символы для озвучки очищаются автоматически.
+            <div>Истории чатов сохраняются на этом устройстве. Озвучка идёт по предложениям и не обрывается.</div>
+            <div class="voiceRow">
+              <div class="lbl">Голос для текущего персонажа:</div>
+              <select id="voiceSelect"></select>
+              <button class="btn" id="autoVoiceBtn">🎛 Автовыбор</button>
+            </div>
           </div>
         </div>
 
@@ -145,17 +164,26 @@
   const chatBox = document.getElementById("chatBox");
   const input = document.getElementById("input");
   const micBtn = document.getElementById("micBtn");
+  const voiceSelect = document.getElementById("voiceSelect");
+  const autoVoiceBtn = document.getElementById("autoVoiceBtn");
 
   let personas = [];
   let currentPersona = null;
 
-  // --------- localStorage (per persona) ----------
-  const LS_KEY = "lowtab_persona_chats_v2";
+  // --------- localStorage ----------
+  const LS_KEY = "lowtab_persona_chats_v4";
+  const LS_VOICE_KEY = "lowtab_persona_voice_v1";
+
   const loadStore = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } };
   const saveStore = (s) => localStorage.setItem(LS_KEY, JSON.stringify(s));
   const getChat = (id) => (loadStore()[id] || []);
   const setChat = (id, msgs) => { const s = loadStore(); s[id]=msgs; saveStore(s); };
   const appendChat = (id, role, content) => { const msgs=getChat(id); msgs.push({role, content, ts:Date.now()}); setChat(id, msgs); };
+
+  const loadVoiceStore = () => { try { return JSON.parse(localStorage.getItem(LS_VOICE_KEY) || "{}"); } catch { return {}; } };
+  const saveVoiceStore = (s) => localStorage.setItem(LS_VOICE_KEY, JSON.stringify(s));
+  const getSavedVoiceName = (personaId) => (loadVoiceStore()[personaId] || "");
+  const setSavedVoiceName = (personaId, voiceName) => { const s=loadVoiceStore(); s[personaId]=voiceName; saveVoiceStore(s); };
 
   function renderChat(id){
     chatBox.innerHTML = "";
@@ -178,6 +206,7 @@
 
   function clearCurrentChat(){
     if(!currentPersona) return;
+    stopSpeech();
     setChat(currentPersona.id, []);
     renderChat(currentPersona.id);
     setStatus("Чат очищен.");
@@ -185,52 +214,107 @@
 
   function setStatus(t){ statusEl.textContent = t; }
 
-  function selectPersona(p){
-    currentPersona = p;
-    who.textContent = `Персонаж: ${p.label}`;
-    document.querySelectorAll(".card").forEach(el => el.classList.remove("active"));
-    const card = document.querySelector(`.card[data-id="${p.id}"]`);
-    if(card) card.classList.add("active");
-    renderChat(p.id);
-    setStatus(`Вы выбрали: ${p.label}. Напиши сообщение.`);
+  // -------------------- Voices --------------------
+  let voicesCache = [];
+
+  function listVoices(){
+    const v = speechSynthesis.getVoices() || [];
+    voicesCache = v;
+    return v;
   }
 
-  // --------- Better RU voice selection ----------
-  let bestVoice = null;
+  function normalize(str){ return (str||"").toLowerCase(); }
 
-  function voiceScore(v){
-    const name = (v.name||"").toLowerCase();
-    const lang = (v.lang||"").toLowerCase();
+  function voiceScore(v, persona){
+    // kuchli scoring: RU + quality + persona hint
+    const name = normalize(v.name);
+    const lang = normalize(v.lang);
+    const personaHints = (persona?.tts?.voice_hint || []).map(normalize);
+
     let s = 0;
-    if(lang === "ru-ru") s += 50;
-    else if(lang.startsWith("ru")) s += 35;
-    if(name.includes("google")) s += 30;
-    if(name.includes("microsoft")) s += 25;
-    if(name.includes("yandex")) s += 25;
-    if(name.includes("premium")) s += 15;
-    if(name.includes("neural")) s += 15;
-    if(v.localService) s += 5;
+    if(lang === "ru-ru") s += 80;
+    else if(lang.startsWith("ru")) s += 55;
+
+    // quality hints
+    if(name.includes("google")) s += 35;
+    if(name.includes("microsoft")) s += 18;
+    if(name.includes("yandex")) s += 18;
+    if(name.includes("neural")) s += 25;
+    if(name.includes("premium")) s += 20;
+    if(v.localService) s += 8;
+
+    // persona-specific hints
+    for(const h of personaHints){
+      if(h && name.includes(h)) s += 12;
+    }
+
+    // penalize very generic / unknown
+    if(name.includes("default")) s -= 8;
+
     return s;
   }
 
-  function pickBestVoice(){
-    const voices = speechSynthesis.getVoices() || [];
+  function pickBestVoiceForPersona(persona){
+    const voices = listVoices();
     if(!voices.length) return null;
-    const ru = voices.filter(v => (v.lang||"").toLowerCase().startsWith("ru"));
+
+    // 1) try RU only
+    const ru = voices.filter(v => normalize(v.lang).startsWith("ru"));
     const pool = ru.length ? ru : voices;
-    pool.sort((a,b)=>voiceScore(b)-voiceScore(a));
-    return pool[0] || null;
+
+    // 2) sort by score
+    const sorted = pool.slice().sort((a,b)=>voiceScore(b, persona)-voiceScore(a, persona));
+    return sorted[0] || null;
   }
 
-  function initVoices(){ bestVoice = pickBestVoice(); }
+  function fillVoiceDropdown(persona){
+    const voices = listVoices();
+    voiceSelect.innerHTML = "";
+
+    // build RU first, then others
+    const ru = voices.filter(v => normalize(v.lang).startsWith("ru"));
+    const other = voices.filter(v => !normalize(v.lang).startsWith("ru"));
+    const ordered = ru.concat(other);
+
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "Авто (лучший голос)";
+    voiceSelect.appendChild(opt0);
+
+    for(const v of ordered){
+      const o = document.createElement("option");
+      o.value = v.name;
+      o.textContent = `${v.name} — ${v.lang}`;
+      voiceSelect.appendChild(o);
+    }
+
+    // apply saved voice if exists
+    const saved = persona ? getSavedVoiceName(persona.id) : "";
+    if(saved){
+      voiceSelect.value = saved;
+    }else{
+      voiceSelect.value = "";
+    }
+  }
+
+  // update voices when available
+  function initVoices(){
+    listVoices();
+    if(currentPersona) fillVoiceDropdown(currentPersona);
+  }
   speechSynthesis.onvoiceschanged = initVoices;
   initVoices();
 
+  // -------------------- TTS queue (natural-ish) --------------------
+  let ttsQueue = [];
+  let speakingNow = false;
+
   function stopSpeech(){
+    ttsQueue = [];
+    speakingNow = false;
     if(speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
   }
 
-  // extra frontend sanitize (if backend didn't)
   function sanitizeForTTS(text){
     return (text||"")
       .replace(/```[\s\S]*?```/g, " ")
@@ -238,29 +322,151 @@
       .replace(/[*+/=\\|<>~^_`]/g, " ")
       .replace(/[-–—]+/g, " ")
       .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 900);
+      .trim();
   }
 
-  function speak(text, tts){
+  // "robot"ni kamaytirish: kichik chunk + mikro pauza
+  function splitToChunksBySentences(text, maxLen=220){
+    const clean = sanitizeForTTS(text);
+    if(!clean) return [];
+
+    // sentence split
+    const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+
+    // merge to chunks
+    const chunks = [];
+    let buf = "";
+    for(const s of sentences){
+      const piece = s.trim();
+      if(!piece) continue;
+
+      if((buf + " " + piece).trim().length <= maxLen){
+        buf = (buf ? (buf + " " + piece) : piece);
+      }else{
+        if(buf) chunks.push(buf.trim());
+        if(piece.length > maxLen){
+          let start = 0;
+          while(start < piece.length){
+            chunks.push(piece.slice(start, start + maxLen).trim());
+            start += maxLen;
+          }
+          buf = "";
+        }else{
+          buf = piece;
+        }
+      }
+    }
+    if(buf) chunks.push(buf.trim());
+
+    return chunks;
+  }
+
+  function applyMicroProsody(text, personaStyle){
+    // SSML yo'q, shuning uchun "pauza"ni faqat tinish belgisi bilan beramiz
+    // juda ko‘p qilmaymiz
+    let t = text;
+
+    // style-based tiny tweaks
+    if(personaStyle === "dry"){
+      t = t.replace(/,\s*/g, ". ");
+    } else if(personaStyle === "warm"){
+      t = t.replace(/\.\s+/g, ".  ");
+    } else if(personaStyle === "bright"){
+      t = t.replace(/!\s+/g, "!  ");
+    } else if(personaStyle === "soft"){
+      t = t.replace(/\.\s+/g, ".  ");
+    }
+
+    return t;
+  }
+
+  function getSelectedVoice(persona){
+    const selected = voiceSelect.value || "";
+    if(selected){
+      const v = voicesCache.find(x => x.name === selected);
+      return v || null;
+    }
+    return pickBestVoiceForPersona(persona);
+  }
+
+  function speakFull(text, tts, persona){
     stopSpeech();
     if(!tts || tts.enabled === false) return;
 
-    const clean = sanitizeForTTS(text);
-    if(!clean) return;
+    const chunks = splitToChunksBySentences(text, 220);
+    if(!chunks.length) return;
 
-    const u = new SpeechSynthesisUtterance(clean);
+    ttsQueue = chunks.map(c => applyMicroProsody(c, tts.style || ""));
+    speakingNow = true;
+    speakNext(tts, persona);
+  }
+
+  function jitter(n, amp){
+    // very small random: monotony ↓
+    const r = (Math.random()*2 - 1) * amp;
+    return n + r;
+  }
+
+  function speakNext(tts, persona){
+    if(!speakingNow) return;
+    if(!ttsQueue.length){
+      speakingNow = false;
+      return;
+    }
+
+    const chunk = ttsQueue.shift();
+    const u = new SpeechSynthesisUtterance(chunk);
+
     u.lang = tts.lang || "ru-RU";
+    const v = getSelectedVoice(persona);
+    if(v) u.voice = v;
 
-    if(!bestVoice) bestVoice = pickBestVoice();
-    if(bestVoice) u.voice = bestVoice;
-
-    u.rate = (typeof tts.rate === "number") ? tts.rate : 1.0;
-    u.pitch = (typeof tts.pitch === "number") ? tts.pitch : 1.0;
+    // slight jitter to reduce "robot"
+    const baseRate = (typeof tts.rate === "number") ? tts.rate : 1.0;
+    const basePitch = (typeof tts.pitch === "number") ? tts.pitch : 1.0;
+    u.rate = Math.max(0.85, Math.min(1.18, jitter(baseRate, 0.03)));
+    u.pitch = Math.max(0.70, Math.min(1.30, jitter(basePitch, 0.03)));
     u.volume = (typeof tts.volume === "number") ? tts.volume : 1.0;
+
+    u.onend = ()=>{
+      // micro pause between chunks (key fix)
+      setTimeout(()=> speakNext(tts, persona), 140);
+    };
+    u.onerror = ()=>{
+      speakingNow = false;
+      ttsQueue = [];
+    };
 
     speechSynthesis.speak(u);
   }
+
+  // --------- UI persona selection ----------
+  function selectPersona(p){
+    stopSpeech();
+    currentPersona = p;
+    who.textContent = `Персонаж: ${p.label}`;
+    document.querySelectorAll(".card").forEach(el => el.classList.remove("active"));
+    const card = document.querySelector(`.card[data-id="${p.id}"]`);
+    if(card) card.classList.add("active");
+
+    fillVoiceDropdown(p);
+    renderChat(p.id);
+    setStatus(`Вы выбрали: ${p.label}. Напиши сообщение.`);
+  }
+
+  voiceSelect.addEventListener("change", ()=>{
+    if(!currentPersona) return;
+    const val = voiceSelect.value || "";
+    setSavedVoiceName(currentPersona.id, val);
+    setStatus(val ? "Голос сохранён для персонажа." : "Автовыбор голоса включён.");
+  });
+
+  autoVoiceBtn.addEventListener("click", ()=>{
+    if(!currentPersona) return;
+    voiceSelect.value = "";
+    setSavedVoiceName(currentPersona.id, "");
+    setStatus("Автовыбор: включено.");
+  });
 
   // --------- backend ----------
   async function loadPersonas(){
@@ -311,6 +517,7 @@
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify(payload)
       });
+
       const data = await res.json();
 
       const answer = (data.response || "").trim() || "…";
@@ -318,9 +525,9 @@
       renderChat(currentPersona.id);
       setStatus("Готов ✅");
 
-      // speak: prefer backend-provided tts_text
       const ttsText = (data.tts_text || answer);
-      speak(ttsText, data.tts || currentPersona.tts);
+      speakFull(ttsText, data.tts || currentPersona.tts, currentPersona);
+
     }catch(e){
       appendChat(currentPersona.id, "assistant", "Ошибка соединения с сервером.");
       renderChat(currentPersona.id);
@@ -328,7 +535,7 @@
     }
   }
 
-  // --------- STT (optional) ----------
+  // --------- STT ----------
   let recognition=null, listening=false;
   function toggleMic(){
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;

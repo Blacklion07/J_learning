@@ -1,6 +1,6 @@
 import os
 import re
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
@@ -17,46 +17,41 @@ if not GEMINI_API_KEY:
 
 genai.configure(api_key=GEMINI_API_KEY)
 
-# ---- TTS sanitization (remove symbols, markdown-ish junk) ----
-_SYMBOLS_RE = re.compile(r"[*+/=\\|<>~^_`]")
-_DASH_RE = re.compile(r"[–—]+")
-_MULTI_SPACE_RE = re.compile(r"\s+")
-_MD_BULLETS_RE = re.compile(r"^\s*[-•·]+\s*", re.MULTILINE)
+# -------------------- Sanitizers --------------------
 _CODE_BLOCKS_RE = re.compile(r"```.*?```", re.DOTALL)
 _INLINE_CODE_RE = re.compile(r"`([^`]*)`")
 _URL_RE = re.compile(r"https?://\S+")
+_MD_BULLETS_RE = re.compile(r"^\s*[-•·]+\s*", re.MULTILINE)
+_SYMBOLS_RE = re.compile(r"[*+/=\\|<>~^_`]")
+_DASHES_RE = re.compile(r"[–—]+")
+_MULTI_SPACE_RE = re.compile(r"\s+")
 _EMOJI_RE = re.compile(r"[\U00010000-\U0010ffff]", flags=re.UNICODE)
 
 def sanitize_for_tts(text: str) -> str:
+    """TTS uchun: belgilarni tozalaydi, lekin javobni KESMAYDI."""
     t = (text or "").strip()
     if not t:
-        return t
+        return ""
 
-    # remove code blocks/inline code
     t = _CODE_BLOCKS_RE.sub(" ", t)
     t = _INLINE_CODE_RE.sub(r"\1", t)
-
-    # remove urls (often read aloud poorly)
     t = _URL_RE.sub(" ", t)
-
-    # remove markdown bullets at line starts
     t = _MD_BULLETS_RE.sub("", t)
 
-    # remove annoying symbols that get spelled out
     t = _SYMBOLS_RE.sub(" ", t)
-    t = t.replace("-", " ")         # hyphen
-    t = _DASH_RE.sub(" ", t)        # long dashes
+    t = t.replace("-", " ")
+    t = _DASHES_RE.sub(" ", t)
 
-    # remove many emojis (optional)
     t = _EMOJI_RE.sub(" ", t)
-
-    # normalize spaces
     t = _MULTI_SPACE_RE.sub(" ", t).strip()
+    return t
 
-    # keep it not too long for speaking
-    if len(t) > 900:
-        t = t[:900].rsplit(" ", 1)[0] + "…"
-
+def sanitize_for_ui(text: str) -> str:
+    t = (text or "").strip()
+    if not t:
+        return ""
+    t = _CODE_BLOCKS_RE.sub(" ", t)
+    t = _MULTI_SPACE_RE.sub(" ", t).strip()
     return t
 
 
@@ -69,7 +64,9 @@ BASE_RULES_RU = """
 Не используй мат, токсичность, угрозы. 18+ контент запрещён.
 """
 
-PERSONAS = {
+# voice_hint: browserda voice.name bo‘yicha topishga yordam beradigan kalit so‘zlar
+# (hamma kompyuterda bir xil bo‘lmaydi, lekin scoring kuchli bo‘ladi)
+PERSONAS: Dict[str, Dict[str, Any]] = {
     "scientist": {
         "label": "🔬 Учёный",
         "tagline": "умно • ясно • уверенно",
@@ -77,7 +74,12 @@ PERSONAS = {
 Харизма: спокойная уверенность. Ты звучишь как умный человек, который объясняет просто.
 Стиль: короткие абзацы, 1–2 примера, один чёткий вывод.
 """,
-        "tts": {"enabled": True, "lang": "ru-RU", "rate": 0.98, "pitch": 0.95, "volume": 1.0}
+        "tts": {
+            "enabled": True, "lang": "ru-RU",
+            "rate": 0.98, "pitch": 0.90, "volume": 1.0,
+            "style": "calm",
+            "voice_hint": ["pavel", "dmitry", "yuri", "google", "neural", "premium", "male"]
+        },
     },
     "anime": {
         "label": "✨ Анимешник",
@@ -86,7 +88,12 @@ PERSONAS = {
 Харизма: высокая энергия. Тёплый драйв, лёгкая улыбка в голосе.
 Можно 1–2 коротких междометия: "Ого!", "Круто!", но без перебора.
 """,
-        "tts": {"enabled": True, "lang": "ru-RU", "rate": 1.06, "pitch": 1.18, "volume": 1.0}
+        "tts": {
+            "enabled": True, "lang": "ru-RU",
+            "rate": 1.06, "pitch": 1.12, "volume": 1.0,
+            "style": "bright",
+            "voice_hint": ["irina", "svetlana", "tatyana", "google", "neural", "premium", "female"]
+        },
     },
     "detective": {
         "label": "🕵️ Детектив",
@@ -95,7 +102,12 @@ PERSONAS = {
 Харизма: холодная точность. Никакой суеты. Короткие фразы.
 Формат: факт, версия, вывод, следующий шаг. Без списков.
 """,
-        "tts": {"enabled": True, "lang": "ru-RU", "rate": 0.94, "pitch": 0.88, "volume": 1.0}
+        "tts": {
+            "enabled": True, "lang": "ru-RU",
+            "rate": 0.94, "pitch": 0.80, "volume": 1.0,
+            "style": "dry",
+            "voice_hint": ["dmitry", "pavel", "yuri", "google", "neural", "premium", "male"]
+        },
     },
     "buddy": {
         "label": "😄 Дружище",
@@ -104,7 +116,12 @@ PERSONAS = {
 Харизма: добрый, уверенный, дружелюбный. Лёгкий юмор, но без кринжа.
 Один дружеский вопрос в конце — максимум.
 """,
-        "tts": {"enabled": True, "lang": "ru-RU", "rate": 1.02, "pitch": 1.06, "volume": 1.0}
+        "tts": {
+            "enabled": True, "lang": "ru-RU",
+            "rate": 1.01, "pitch": 1.02, "volume": 1.0,
+            "style": "warm",
+            "voice_hint": ["pavel", "irina", "google", "neural", "premium"]
+        },
     },
     "coach": {
         "label": "🚀 Коуч",
@@ -113,7 +130,12 @@ PERSONAS = {
 Харизма: мотивирующий тренер. Сильная подача, но мягко.
 Дай один короткий план: "сейчас делаем вот это" — в одну строку.
 """,
-        "tts": {"enabled": True, "lang": "ru-RU", "rate": 1.01, "pitch": 1.00, "volume": 1.0}
+        "tts": {
+            "enabled": True, "lang": "ru-RU",
+            "rate": 1.03, "pitch": 0.95, "volume": 1.0,
+            "style": "push",
+            "voice_hint": ["pavel", "dmitry", "google", "neural", "premium", "male"]
+        },
     },
     "philosopher": {
         "label": "🌓 Философ",
@@ -122,7 +144,12 @@ PERSONAS = {
 Харизма: мягкая глубина. Спокойный темп, красивый русский язык.
 Один вопрос на размышление в конце.
 """,
-        "tts": {"enabled": True, "lang": "ru-RU", "rate": 0.97, "pitch": 0.92, "volume": 1.0}
+        "tts": {
+            "enabled": True, "lang": "ru-RU",
+            "rate": 0.97, "pitch": 0.86, "volume": 1.0,
+            "style": "soft",
+            "voice_hint": ["yuri", "pavel", "google", "neural", "premium", "male"]
+        },
     },
 }
 
@@ -159,7 +186,6 @@ def personas():
 
 
 def format_history(history: List[Dict[str, Any]], limit: int = 10) -> str:
-    # short context so model keeps style without long drift
     lines = []
     for m in (history or [])[-limit:]:
         role = m.get("role")
@@ -182,7 +208,12 @@ async def chat(data: dict):
     persona = PERSONAS.get(persona_id, PERSONAS["buddy"])
 
     if not message:
-        return {"response": "Напиши сообщение 🙂", "tts": persona["tts"], "tts_text": "Напиши сообщение."}
+        return {
+            "response": "Напиши сообщение 🙂",
+            "tts_text": "Напиши сообщение.",
+            "tts": persona["tts"],
+            "persona": {"id": persona_id, "label": persona["label"], "tagline": persona["tagline"]},
+        }
 
     prompt = f"""
 [ПЕРСОНА]
@@ -191,8 +222,8 @@ async def chat(data: dict):
 [ЖЁСТКИЕ ТРЕБОВАНИЯ]
 - Ответ только на русском, без ошибок.
 - Не использовать маркеры списков, не использовать *, /, +, -, не использовать markdown.
-- Текст должен звучать красиво при озвучке: короткие фразы, естественные паузы.
-- 1–3 коротких абзаца.
+- Если ответ большой: первые 4–5 предложений сделай особенно связными и "в голос", потом продолжай до полного ответа.
+- Не обрывай мысль. Доводи ответ до конца.
 
 [КОНТЕКСТ]
 {format_history(history, limit=10)}
@@ -204,12 +235,21 @@ async def chat(data: dict):
     try:
         resp = model.generate_content(
             prompt,
-            generation_config={"temperature": 0.72, "top_p": 0.9, "max_output_tokens": 520},
+            generation_config={
+                "temperature": 0.72,
+                "top_p": 0.9,
+                "max_output_tokens": 1400,
+            },
         )
-        text = (resp.text or "").strip() or "Повтори, пожалуйста, я на секунду отвлёкся."
-        tts_text = sanitize_for_tts(text)
+        text = (resp.text or "").strip()
+        if not text:
+            text = "Повтори, пожалуйста, я на секунду отвлёкся."
+
+        ui_text = sanitize_for_ui(text)
+        tts_text = sanitize_for_tts(ui_text)
+
         return {
-            "response": text,
+            "response": ui_text,
             "tts_text": tts_text,
             "tts": persona["tts"],
             "persona": {"id": persona_id, "label": persona["label"], "tagline": persona["tagline"]},
