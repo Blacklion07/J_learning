@@ -294,6 +294,7 @@
         overflow-y:hidden;
         padding:12px;
         scroll-snap-type:x mandatory;
+
       }
       .card{
         flex:0 0 72%;
@@ -364,8 +365,11 @@
   </div>
 
 <script>
-  const BASE_URL = "https://j-learning.onrender.com/";
+  // ===================== CONFIG =====================
+  // Render backend url (example): https://lowtabai.onrender.com
+  const BASE_URL = "https://SENING-RENDER-APP.onrender.com";
 
+  // ===================== DOM =====================
   const grid = document.getElementById("grid");
   const who = document.getElementById("who");
   const statusEl = document.getElementById("status");
@@ -375,100 +379,148 @@
   const voiceSelect = document.getElementById("voiceSelect");
   const autoVoiceBtn = document.getElementById("autoVoiceBtn");
 
+  // ===================== STATE =====================
   let personas = [];
   let currentPersona = null;
 
-  // --------- localStorage ----------
-  const LS_KEY = "lowtab_persona_chats_v4";
-  const LS_VOICE_KEY = "lowtab_persona_voice_v1";
+  // ===================== STORAGE =====================
+  const LS_KEY = "lowtab_persona_chats_v5";
+  const LS_VOICE_KEY = "lowtab_persona_voice_v2";
 
   const loadStore = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } };
   const saveStore = (s) => localStorage.setItem(LS_KEY, JSON.stringify(s));
   const getChat = (id) => (loadStore()[id] || []);
-  const setChat = (id, msgs) => { const s = loadStore(); s[id]=msgs; saveStore(s); };
-  const appendChat = (id, role, content) => { const msgs=getChat(id); msgs.push({role, content, ts:Date.now()}); setChat(id, msgs); };
+  const setChat = (id, msgs) => { const s = loadStore(); s[id] = msgs; saveStore(s); };
+  const appendChat = (id, role, content) => { const msgs = getChat(id); msgs.push({ role, content, ts: Date.now() }); setChat(id, msgs); };
 
   const loadVoiceStore = () => { try { return JSON.parse(localStorage.getItem(LS_VOICE_KEY) || "{}"); } catch { return {}; } };
   const saveVoiceStore = (s) => localStorage.setItem(LS_VOICE_KEY, JSON.stringify(s));
   const getSavedVoiceName = (personaId) => (loadVoiceStore()[personaId] || "");
-  const setSavedVoiceName = (personaId, voiceName) => { const s=loadVoiceStore(); s[personaId]=voiceName; saveVoiceStore(s); };
+  const setSavedVoiceName = (personaId, voiceName) => { const s = loadVoiceStore(); s[personaId] = voiceName; saveVoiceStore(s); };
 
-  function renderChat(id){
+  // ===================== FALLBACK PERSONAS (always show cards) =====================
+  const FALLBACK_PERSONAS = [
+    { id:"scientist",  label:"🔬 Учёный",     tagline:"умно • ясно • уверенно", tts:{enabled:true, lang:"ru-RU", rate:0.98, pitch:0.90, volume:1.0, style:"calm", voice_hint:["pavel","dmitry","yuri","google","neural","premium","male"]} },
+    { id:"anime",      label:"✨ Анимешник",  tagline:"энергично • ярко • дружелюбно", tts:{enabled:true, lang:"ru-RU", rate:1.06, pitch:1.12, volume:1.0, style:"bright", voice_hint:["irina","svetlana","tatyana","google","neural","premium","female"]} },
+    { id:"detective",  label:"🕵️ Детектив",  tagline:"холодно • точно • по делу", tts:{enabled:true, lang:"ru-RU", rate:0.94, pitch:0.80, volume:1.0, style:"dry", voice_hint:["dmitry","pavel","yuri","google","neural","premium","male"]} },
+    { id:"buddy",      label:"😄 Дружище",   tagline:"тёпло • с юмором • поддержка", tts:{enabled:true, lang:"ru-RU", rate:1.01, pitch:1.02, volume:1.0, style:"warm", voice_hint:["pavel","irina","google","neural","premium"]} },
+    { id:"coach",      label:"🚀 Коуч",       tagline:"фокус • мотивация • шаги", tts:{enabled:true, lang:"ru-RU", rate:1.03, pitch:0.95, volume:1.0, style:"push", voice_hint:["pavel","dmitry","google","neural","premium","male"]} },
+    { id:"philosopher",label:"🌓 Философ",    tagline:"глубоко • спокойно • смысл", tts:{enabled:true, lang:"ru-RU", rate:0.97, pitch:0.86, volume:1.0, style:"soft", voice_hint:["yuri","pavel","google","neural","premium","male"]} },
+  ];
+
+  // ===================== UI HELPERS =====================
+  function setStatus(t) { statusEl.textContent = t; }
+
+  function renderChat(id) {
     chatBox.innerHTML = "";
     const msgs = getChat(id);
-    if(!msgs.length){
-      const p=document.createElement("p");
-      p.className="msg ai";
-      p.textContent="Начнём 🙂 Напиши сообщение.";
+    if (!msgs.length) {
+      const p = document.createElement("p");
+      p.className = "msg ai";
+      p.textContent = "Начнём 🙂 Напиши сообщение.";
       chatBox.appendChild(p);
       return;
     }
-    msgs.forEach(m=>{
-      const p=document.createElement("p");
-      p.className="msg "+(m.role==="user"?"me":"ai");
-      p.textContent=(m.role==="user"?"Вы: ":"AI: ")+m.content;
+    msgs.forEach(m => {
+      const p = document.createElement("p");
+      p.className = "msg " + (m.role === "user" ? "me" : "ai");
+      p.textContent = (m.role === "user" ? "Вы: " : "AI: ") + m.content;
       chatBox.appendChild(p);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
-  function clearCurrentChat(){
-    if(!currentPersona) return;
+  function renderPersonas(list) {
+    personas = list || [];
+    grid.innerHTML = "";
+
+    if (!personas.length) {
+      grid.innerHTML = `<div style="padding:12px;color:#a6b6d6;font-size:12px">Персонажи не загружены.</div>`;
+      return;
+    }
+
+    personas.forEach(p => {
+      const d = document.createElement("div");
+      d.className = "card";
+      d.dataset.id = p.id;
+      d.innerHTML = `
+        <div class="portrait"></div>
+        <div class="cardInfo">
+          <div class="name">${p.label}</div>
+          <div class="tag">${p.tagline}</div>
+        </div>
+      `;
+      d.onclick = () => selectPersona(p);
+      grid.appendChild(d);
+    });
+  }
+
+  function selectPersona(p) {
+    stopSpeech();
+    currentPersona = p;
+
+    who.textContent = `Персонаж: ${p.label}`;
+    document.querySelectorAll(".card").forEach(el => el.classList.remove("active"));
+    const card = document.querySelector(`.card[data-id="${p.id}"]`);
+    if (card) card.classList.add("active");
+
+    fillVoiceDropdown(p);
+    renderChat(p.id);
+    setStatus(`Вы выбрали: ${p.label}. Напиши сообщение.`);
+  }
+
+  function clearCurrentChat() {
+    if (!currentPersona) return;
     stopSpeech();
     setChat(currentPersona.id, []);
     renderChat(currentPersona.id);
     setStatus("Чат очищен.");
   }
+  window.clearCurrentChat = clearCurrentChat;
 
-  function setStatus(t){ statusEl.textContent = t; }
-
-  // -------------------- Voices --------------------
+  // ===================== VOICES =====================
   let voicesCache = [];
 
-  function listVoices(){
+  function listVoices() {
     const v = speechSynthesis.getVoices() || [];
     voicesCache = v;
     return v;
   }
+  function normalize(str) { return (str || "").toLowerCase(); }
 
-  function normalize(str){ return (str||"").toLowerCase(); }
-
-  function voiceScore(v, persona){
+  function voiceScore(v, persona) {
     const name = normalize(v.name);
     const lang = normalize(v.lang);
     const personaHints = (persona?.tts?.voice_hint || []).map(normalize);
 
     let s = 0;
-    if(lang === "ru-ru") s += 80;
-    else if(lang.startsWith("ru")) s += 55;
+    if (lang === "ru-ru") s += 80;
+    else if (lang.startsWith("ru")) s += 55;
 
-    if(name.includes("google")) s += 35;
-    if(name.includes("microsoft")) s += 18;
-    if(name.includes("yandex")) s += 18;
-    if(name.includes("neural")) s += 25;
-    if(name.includes("premium")) s += 20;
-    if(v.localService) s += 8;
+    if (name.includes("google")) s += 35;
+    if (name.includes("microsoft")) s += 18;
+    if (name.includes("yandex")) s += 18;
+    if (name.includes("neural")) s += 25;
+    if (name.includes("premium")) s += 20;
+    if (v.localService) s += 8;
 
-    for(const h of personaHints){
-      if(h && name.includes(h)) s += 12;
-    }
+    for (const h of personaHints) if (h && name.includes(h)) s += 12;
 
-    if(name.includes("default")) s -= 8;
+    if (name.includes("default")) s -= 8;
     return s;
   }
 
-  function pickBestVoiceForPersona(persona){
+  function pickBestVoiceForPersona(persona) {
     const voices = listVoices();
-    if(!voices.length) return null;
+    if (!voices.length) return null;
 
     const ru = voices.filter(v => normalize(v.lang).startsWith("ru"));
     const pool = ru.length ? ru : voices;
-
-    const sorted = pool.slice().sort((a,b)=>voiceScore(b, persona)-voiceScore(a, persona));
+    const sorted = pool.slice().sort((a, b) => voiceScore(b, persona) - voiceScore(a, persona));
     return sorted[0] || null;
   }
 
-  function fillVoiceDropdown(persona){
+  function fillVoiceDropdown(persona) {
     const voices = listVoices();
     voiceSelect.innerHTML = "";
 
@@ -481,7 +533,7 @@
     opt0.textContent = "Авто (лучший голос)";
     voiceSelect.appendChild(opt0);
 
-    for(const v of ordered){
+    for (const v of ordered) {
       const o = document.createElement("option");
       o.value = v.name;
       o.textContent = `${v.name} — ${v.lang}`;
@@ -492,25 +544,49 @@
     voiceSelect.value = saved || "";
   }
 
-  function initVoices(){
+  function initVoices() {
     listVoices();
-    if(currentPersona) fillVoiceDropdown(currentPersona);
+    if (currentPersona) fillVoiceDropdown(currentPersona);
   }
   speechSynthesis.onvoiceschanged = initVoices;
   initVoices();
 
-  // -------------------- TTS queue --------------------
+  voiceSelect.addEventListener("change", () => {
+    if (!currentPersona) { setStatus("Сначала выбери персонажа."); return; }
+    const val = voiceSelect.value || "";
+    setSavedVoiceName(currentPersona.id, val);
+    setStatus(val ? "Голос сохранён для персонажа." : "Автовыбор голоса включён.");
+  });
+
+  autoVoiceBtn.addEventListener("click", () => {
+    if (!currentPersona) { setStatus("Сначала выбери персонажа."); return; }
+    voiceSelect.value = "";
+    setSavedVoiceName(currentPersona.id, "");
+    setStatus("Автовыбор: включено.");
+  });
+
+  function getSelectedVoice(persona) {
+    const selected = voiceSelect.value || "";
+    if (selected) {
+      const v = voicesCache.find(x => x.name === selected);
+      return v || null;
+    }
+    return pickBestVoiceForPersona(persona);
+  }
+
+  // ===================== TTS (chunked) =====================
   let ttsQueue = [];
   let speakingNow = false;
 
-  function stopSpeech(){
+  function stopSpeech() {
     ttsQueue = [];
     speakingNow = false;
-    if(speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
   }
+  window.stopSpeech = stopSpeech;
 
-  function sanitizeForTTS(text){
-    return (text||"")
+  function sanitizeForTTS(text) {
+    return (text || "")
       .replace(/```[\s\S]*?```/g, " ")
       .replace(/https?:\/\/\S+/g, " ")
       .replace(/[*+/=\\|<>~^_`]/g, " ")
@@ -519,181 +595,143 @@
       .trim();
   }
 
-  function splitToChunksBySentences(text, maxLen=220){
+  function splitToChunksBySentences(text, maxLen = 220) {
     const clean = sanitizeForTTS(text);
-    if(!clean) return [];
+    if (!clean) return [];
     const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
 
     const chunks = [];
     let buf = "";
-    for(const s of sentences){
+    for (const s of sentences) {
       const piece = s.trim();
-      if(!piece) continue;
+      if (!piece) continue;
 
-      if((buf + " " + piece).trim().length <= maxLen){
+      if ((buf + " " + piece).trim().length <= maxLen) {
         buf = (buf ? (buf + " " + piece) : piece);
-      }else{
-        if(buf) chunks.push(buf.trim());
-        if(piece.length > maxLen){
+      } else {
+        if (buf) chunks.push(buf.trim());
+        if (piece.length > maxLen) {
           let start = 0;
-          while(start < piece.length){
+          while (start < piece.length) {
             chunks.push(piece.slice(start, start + maxLen).trim());
             start += maxLen;
           }
           buf = "";
-        }else{
+        } else {
           buf = piece;
         }
       }
     }
-    if(buf) chunks.push(buf.trim());
+    if (buf) chunks.push(buf.trim());
     return chunks;
   }
 
-  function applyMicroProsody(text, personaStyle){
+  function applyMicroProsody(text, personaStyle) {
     let t = text;
-    if(personaStyle === "dry"){
-      t = t.replace(/,\s*/g, ". ");
-    } else if(personaStyle === "warm"){
-      t = t.replace(/\.\s+/g, ".  ");
-    } else if(personaStyle === "bright"){
-      t = t.replace(/!\s+/g, "!  ");
-    } else if(personaStyle === "soft"){
-      t = t.replace(/\.\s+/g, ".  ");
-    }
+    if (personaStyle === "dry") t = t.replace(/,\s*/g, ". ");
+    else if (personaStyle === "warm") t = t.replace(/\.\s+/g, ".  ");
+    else if (personaStyle === "bright") t = t.replace(/!\s+/g, "!  ");
+    else if (personaStyle === "soft") t = t.replace(/\.\s+/g, ".  ");
     return t;
   }
 
-  function getSelectedVoice(persona){
-    const selected = voiceSelect.value || "";
-    if(selected){
-      const v = voicesCache.find(x => x.name === selected);
-      return v || null;
-    }
-    return pickBestVoiceForPersona(persona);
-  }
-
-  function jitter(n, amp){
-    const r = (Math.random()*2 - 1) * amp;
+  function jitter(n, amp) {
+    const r = (Math.random() * 2 - 1) * amp;
     return n + r;
   }
 
-  function speakFull(text, tts, persona){
+  function speakFull(text, tts, persona) {
     stopSpeech();
-    if(!tts || tts.enabled === false) return;
+    if (!tts || tts.enabled === false) return;
 
     const chunks = splitToChunksBySentences(text, 220);
-    if(!chunks.length) return;
+    if (!chunks.length) return;
 
     ttsQueue = chunks.map(c => applyMicroProsody(c, tts.style || ""));
     speakingNow = true;
     speakNext(tts, persona);
   }
 
-  function speakNext(tts, persona){
-    if(!speakingNow) return;
-    if(!ttsQueue.length){
-      speakingNow = false;
-      return;
-    }
+  function speakNext(tts, persona) {
+    if (!speakingNow) return;
+    if (!ttsQueue.length) { speakingNow = false; return; }
 
     const chunk = ttsQueue.shift();
     const u = new SpeechSynthesisUtterance(chunk);
 
     u.lang = tts.lang || "ru-RU";
     const v = getSelectedVoice(persona);
-    if(v) u.voice = v;
+    if (v) u.voice = v;
 
     const baseRate = (typeof tts.rate === "number") ? tts.rate : 1.0;
     const basePitch = (typeof tts.pitch === "number") ? tts.pitch : 1.0;
+
     u.rate = Math.max(0.85, Math.min(1.18, jitter(baseRate, 0.03)));
     u.pitch = Math.max(0.70, Math.min(1.30, jitter(basePitch, 0.03)));
     u.volume = (typeof tts.volume === "number") ? tts.volume : 1.0;
 
-    u.onend = ()=> setTimeout(()=> speakNext(tts, persona), 140);
-    u.onerror = ()=>{ speakingNow = false; ttsQueue = []; };
+    u.onend = () => setTimeout(() => speakNext(tts, persona), 140);
+    u.onerror = () => { speakingNow = false; ttsQueue = []; };
 
     speechSynthesis.speak(u);
   }
 
-  // --------- UI persona selection ----------
-  function selectPersona(p){
-    stopSpeech();
-    currentPersona = p;
-    who.textContent = `Персонаж: ${p.label}`;
-    document.querySelectorAll(".card").forEach(el => el.classList.remove("active"));
-    const card = document.querySelector(`.card[data-id="${p.id}"]`);
-    if(card) card.classList.add("active");
-
-    fillVoiceDropdown(p);
-    renderChat(p.id);
-    setStatus(`Вы выбрали: ${p.label}. Напиши сообщение.`);
-  }
-
-  voiceSelect.addEventListener("change", ()=>{
-    if(!currentPersona) return;
-    const val = voiceSelect.value || "";
-    setSavedVoiceName(currentPersona.id, val);
-    setStatus(val ? "Голос сохранён для персонажа." : "Автовыбор голоса включён.");
-  });
-
-  autoVoiceBtn.addEventListener("click", ()=>{
-    if(!currentPersona) return;
-    voiceSelect.value = "";
-    setSavedVoiceName(currentPersona.id, "");
-    setStatus("Автовыбор: включено.");
-  });
-
-  // --------- backend ----------
-  async function loadPersonas(){
-    const res = await fetch(`${BASE_URL}/personas`);
-    const data = await res.json();
-    personas = data.personas || [];
-    grid.innerHTML = "";
-
-    personas.forEach(p=>{
-      const d = document.createElement("div");
-      d.className = "card";
-      d.dataset.id = p.id;
-      d.innerHTML = `
-        <div class="portrait"></div>
-        <div class="cardInfo">
-          <div class="name">${p.label}</div>
-          <div class="tag">${p.tagline}</div>
-        </div>
-      `;
-      d.onclick = ()=>selectPersona(p);
-      grid.appendChild(d);
-    });
-
-    if(personas.length) selectPersona(personas[0]);
-  }
-
-  function buildHistoryForAPI(id){
+  // ===================== BACKEND =====================
+  function buildHistoryForAPI(id) {
     return getChat(id).slice(-10).map(m => ({
       role: m.role === "user" ? "user" : "assistant",
       content: m.content
     }));
   }
 
-  async function sendMessage(){
+  async function loadPersonas() {
+    setStatus("Загружаю персонажей...");
+
+    // Always show cards immediately (UI won't be empty)
+    renderPersonas(FALLBACK_PERSONAS);
+
+    try {
+      const res = await fetch(`${BASE_URL}/personas`, { cache: "no-store" });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+
+      const data = await res.json();
+      const serverPersonas = data.personas || [];
+
+      if (serverPersonas.length) {
+        renderPersonas(serverPersonas);
+        selectPersona(serverPersonas[0]);
+        setStatus("Готов ✅");
+      } else {
+        selectPersona(FALLBACK_PERSONAS[0]);
+        setStatus("Сервер ответил, но список пуст. Использую локальные персонажи.");
+      }
+    } catch (e) {
+      console.error(e);
+      selectPersona(FALLBACK_PERSONAS[0]);
+      setStatus("Нет связи с сервером. Персонажи локально. Проверь BASE_URL/интернет.");
+    }
+  }
+
+  async function sendMessage() {
     const text = (input.value || "").trim();
-    if(!text) return;
-    if(!currentPersona){ setStatus("Сначала выбери персонажа."); return; }
+    if (!text) return;
+    if (!currentPersona) { setStatus("Сначала выбери персонажа."); return; }
 
     input.value = "";
     appendChat(currentPersona.id, "user", text);
     renderChat(currentPersona.id);
     setStatus("Думаю...");
 
-    try{
+    try {
       const payload = { persona: currentPersona.id, message: text, history: buildHistoryForAPI(currentPersona.id) };
+
       const res = await fetch(`${BASE_URL}/chat`, {
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body: JSON.stringify(payload)
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
+      if (!res.ok) throw new Error("HTTP " + res.status);
       const data = await res.json();
 
       const answer = (data.response || "").trim() || "…";
@@ -704,30 +742,49 @@
       const ttsText = (data.tts_text || answer);
       speakFull(ttsText, data.tts || currentPersona.tts, currentPersona);
 
-    }catch(e){
+    } catch (e) {
+      console.error(e);
       appendChat(currentPersona.id, "assistant", "Ошибка соединения с сервером.");
       renderChat(currentPersona.id);
       setStatus("Ошибка");
     }
   }
+  window.sendMessage = sendMessage;
 
-  // --------- STT ----------
-  let recognition=null, listening=false;
-  function toggleMic(){
+  // ===================== STT (WebView often doesn't support it) =====================
+  let recognition = null, listening = false;
+
+  function toggleMic() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SpeechRecognition){ alert("Голосовой ввод не поддерживается. Напиши текстом 🙂"); return; }
-    if(!recognition){
+    if (!SpeechRecognition) {
+      alert("Голосовой ввод в WebView часто не поддерживается. Открой в Chrome или сделаем STT через сервер (Whisper).");
+      return;
+    }
+    if (!recognition) {
       recognition = new SpeechRecognition();
       recognition.lang = "ru-RU";
       recognition.interimResults = false;
-      recognition.onresult = (e)=>{ input.value = e.results[0][0].transcript || ""; sendMessage(); };
-      recognition.onend = ()=>{ listening=false; micBtn.textContent="🎤"; };
+      recognition.onresult = (e) => {
+        input.value = e.results?.[0]?.[0]?.transcript || "";
+        sendMessage();
+      };
+      recognition.onend = () => { listening = false; micBtn.textContent = "🎤"; };
+      recognition.onerror = () => { listening = false; micBtn.textContent = "🎤"; };
     }
-    if(!listening){ listening=true; micBtn.textContent="🔴"; recognition.start(); }
-    else recognition.stop();
+    if (!listening) {
+      listening = true;
+      micBtn.textContent = "🔴";
+      recognition.start();
+    } else {
+      recognition.stop();
+    }
   }
+  window.toggleMic = toggleMic;
 
-  input.addEventListener("keydown",(e)=>{ if(e.key==="Enter") sendMessage(); });
+  // ===================== EVENTS =====================
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
+
+  // Boot
   loadPersonas();
 </script>
 </body>
