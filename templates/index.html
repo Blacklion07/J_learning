@@ -2,311 +2,81 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8"/>
-  <!-- IMPORTANT: mobile viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
   <title>LowtabAI — Персонажи</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
-
   <style>
-    :root{
-      --bg:#070a12; --glass: rgba(255,255,255,.06); --border: rgba(255,255,255,.12);
-      --text:#eaf2ff; --muted:#a6b6d6; --p:#00e5ff; --s:#b400ff; --danger:#ff0055;
-      --shadow: 0 25px 80px rgba(0,0,0,.55); --r: 22px;
-    }
+    /* (SENING CSS — o‘zgartirmadim, qisqartirmay qo‘y) */
+    :root{--bg:#070a12;--glass:rgba(255,255,255,.06);--border:rgba(255,255,255,.12);--text:#eaf2ff;--muted:#a6b6d6;--p:#00e5ff;--s:#b400ff;--danger:#ff0055;--shadow:0 25px 80px rgba(0,0,0,.55);--r:22px;}
     *{box-sizing:border-box;margin:0;padding:0;font-family:Outfit,system-ui,Segoe UI,sans-serif}
     html,body{height:100%; width:100%;}
-    body{
-      background: radial-gradient(circle at top, #0c1633, var(--bg));
-      color:var(--text);
-      overflow:hidden;
-      -webkit-tap-highlight-color: transparent;
-      touch-action: manipulation;
-    }
-
-    /* ===== Desktop default (16:9 card) ===== */
-    .stage{
-      width:min(100vw, calc(100vh * 16 / 9));
-      height:min(100vh, calc(100vw * 9 / 16));
-      margin:auto;
-      position:relative;
-      top:50%;
-      transform:translateY(-50%);
-      border-radius: calc(var(--r) + 10px);
-      overflow:hidden;
-      box-shadow: var(--shadow);
-      border:1px solid rgba(255,255,255,.10);
-      background: linear-gradient(135deg, rgba(0,229,255,.06), rgba(180,0,255,.06));
-    }
-
-    .stage::before{
-      content:"";
-      position:absolute;
-      inset:-60%;
-      background:
-        radial-gradient(circle at 20% 30%, rgba(0,229,255,.35), transparent 45%),
-        radial-gradient(circle at 70% 70%, rgba(180,0,255,.30), transparent 45%),
-        radial-gradient(circle at 50% 10%, rgba(255,0,85,.18), transparent 40%);
-      filter: blur(60px);
-      animation: float 10s ease-in-out infinite alternate;
-    }
-    @keyframes float{
-      from{transform:translate(0,0) scale(1)}
-      to{transform:translate(80px,60px) scale(1.06)}
-    }
-
-    .app{
-      position:absolute;
-      inset:0;
-      padding: 22px;
-      display:flex;
-      flex-direction:column;
-      gap: 14px;
-      z-index:1;
-      min-height:0;
-    }
-
-    .topbar{
-      display:flex; align-items:center; justify-content:space-between;
-      padding: 14px 16px;
-      background: var(--glass);
-      border:1px solid var(--border);
-      border-radius: var(--r);
-      backdrop-filter: blur(16px);
-      gap:12px;
-      min-height:56px;
-    }
-    .brand{display:flex; flex-direction:column; gap:2px; min-width:0;}
-    .brand .t{font-weight:800; letter-spacing:.5px; font-size:18px}
-    .brand .s{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:52vw;}
-    .who{
-      font-size:12px; color:var(--muted);
-      padding: 10px 12px;
-      border:1px solid var(--border);
-      border-radius: 999px;
-      background: rgba(0,0,0,.25);
-      white-space:nowrap;
-      flex:0 0 auto;
-    }
-
-    .main{
-      flex:1;
-      display:grid;
-      grid-template-columns: 1.15fr .85fr;
-      gap: 14px;
-      min-height:0;
-    }
-
-    .panel{
-      background: var(--glass);
-      border:1px solid var(--border);
-      border-radius: var(--r);
-      backdrop-filter: blur(16px);
-      overflow:hidden;
-      min-height:0;
-      display:flex;
-      flex-direction:column;
-    }
-    .panelHead{
-      padding: 14px 16px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      display:flex; justify-content:space-between; align-items:center; gap:12px;
-    }
+    body{background:radial-gradient(circle at top,#0c1633,var(--bg));color:var(--text);overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+    .stage{width:min(100vw,calc(100vh * 16 / 9));height:min(100vh,calc(100vw * 9 / 16));margin:auto;position:relative;top:50%;transform:translateY(-50%);border-radius:calc(var(--r) + 10px);overflow:hidden;box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.10);background:linear-gradient(135deg,rgba(0,229,255,.06),rgba(180,0,255,.06));}
+    .stage::before{content:"";position:absolute;inset:-60%;background:radial-gradient(circle at 20% 30%,rgba(0,229,255,.35),transparent 45%),radial-gradient(circle at 70% 70%,rgba(180,0,255,.30),transparent 45%),radial-gradient(circle at 50% 10%,rgba(255,0,85,.18),transparent 40%);filter:blur(60px);animation:float 10s ease-in-out infinite alternate;}
+    @keyframes float{from{transform:translate(0,0) scale(1)}to{transform:translate(80px,60px) scale(1.06)}}
+    .app{position:absolute;inset:0;padding:22px;display:flex;flex-direction:column;gap:14px;z-index:1;min-height:0;}
+    .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--glass);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(16px);gap:12px;min-height:56px;}
+    .brand{display:flex;flex-direction:column;gap:2px;min-width:0;}
+    .brand .t{font-weight:800;letter-spacing:.5px;font-size:18px}
+    .brand .s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:52vw;}
+    .who{font-size:12px;color:var(--muted);padding:10px 12px;border:1px solid var(--border);border-radius:999px;background:rgba(0,0,0,.25);white-space:nowrap;flex:0 0 auto;}
+    .main{flex:1;display:grid;grid-template-columns:1.15fr .85fr;gap:14px;min-height:0;}
+    .panel{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(16px);overflow:hidden;min-height:0;display:flex;flex-direction:column;}
+    .panelHead{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.10);display:flex;justify-content:space-between;align-items:center;gap:12px;}
     .panelHead .h{font-weight:700;}
-    .panelHead .note{font-size:12px; color:var(--muted);}
-
-    .grid{
-      padding: 14px;
-      display:grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-      overflow:auto;
-      min-height:0;
-    }
-    .card{
-      height:165px;
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.22);
-      overflow:hidden;
-      cursor:pointer;
-      position:relative;
-      transition:.2s;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-    .card:hover{ transform: translateY(-2px); border-color: rgba(0,229,255,.35); }
-    .card.active{ outline:2px solid rgba(0,229,255,.55); }
-    .portrait{
-      position:absolute; inset:0;
-      background:
-        radial-gradient(circle at 30% 30%, rgba(0,229,255,.16), transparent 55%),
-        radial-gradient(circle at 70% 80%, rgba(180,0,255,.14), transparent 55%),
-        linear-gradient(135deg, rgba(255,255,255,.06), rgba(0,0,0,.15));
-      transform: scale(1.05);
-      filter: saturate(1.1);
-      animation: shimmer 4s ease-in-out infinite alternate;
-    }
-    @keyframes shimmer{ from{filter:blur(0px) brightness(1)} to{filter:blur(.2px) brightness(1.05)} }
-    .cardInfo{
-      position:absolute; left:0; right:0; bottom:0;
-      padding:12px 12px;
-      background: linear-gradient(180deg, transparent, rgba(0,0,0,.72));
-    }
+    .panelHead .note{font-size:12px;color:var(--muted);}
+    .grid{padding:14px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;overflow:auto;min-height:0;}
+    .card{height:165px;border-radius:18px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.22);overflow:hidden;cursor:pointer;position:relative;transition:.2s;user-select:none;-webkit-user-select:none;}
+    .card:hover{transform:translateY(-2px);border-color:rgba(0,229,255,.35);}
+    .card.active{outline:2px solid rgba(0,229,255,.55);}
+    .portrait{position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(0,229,255,.16),transparent 55%),radial-gradient(circle at 70% 80%,rgba(180,0,255,.14),transparent 55%),linear-gradient(135deg,rgba(255,255,255,.06),rgba(0,0,0,.15));transform:scale(1.05);filter:saturate(1.1);animation:shimmer 4s ease-in-out infinite alternate;}
+    @keyframes shimmer{from{filter:blur(0px) brightness(1)}to{filter:blur(.2px) brightness(1.05)}}
+    .cardInfo{position:absolute;left:0;right:0;bottom:0;padding:12px 12px;background:linear-gradient(180deg,transparent,rgba(0,0,0,.72));}
     .cardInfo .name{font-weight:800}
-    .cardInfo .tag{font-size:12px; color: rgba(255,255,255,.78); margin-top:3px}
+    .cardInfo .tag{font-size:12px;color:rgba(255,255,255,.78);margin-top:3px}
+    .panelFooter{margin-top:auto;padding:12px 14px;border-top:1px solid rgba(255,255,255,.10);font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:8px;}
+    .voiceRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+    .voiceRow .lbl{font-size:12px;color:var(--muted)}
+    select{padding:10px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.20);color:var(--text);outline:none;min-width:260px;max-width:100%;}
+    .chatWrap{background:var(--glass);border:1px solid var(--border);border-radius:var(--r);backdrop-filter:blur(16px);display:flex;flex-direction:column;overflow:hidden;min-height:0;}
+    .chatHead{padding:14px 16px;border-bottom:1px solid rgba(255,255,255,.10);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+    .status{font-size:12px;color:var(--muted);min-height:16px}
+    .actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+    .btn{border:none;border-radius:14px;padding:10px 12px;cursor:pointer;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);transition:.2s;font-size:12px;user-select:none;-webkit-user-select:none;}
+    .btn:hover{transform:translateY(-1px);}
+    .btn.danger{background:rgba(255,0,85,.20);border:1px solid rgba(255,0,85,.35);}
+    .chat{flex:1;padding:14px 16px;overflow:auto;min-height:0;line-height:1.5;overscroll-behavior:contain;}
+    .msg{margin:0 0 12px 0;white-space:pre-wrap;word-break:break-word;}
+    .me{color:#9adfff;}
+    .ai{color:var(--text);}
+    .inputRow{padding:12px 12px;padding-bottom:calc(12px + env(safe-area-inset-bottom));border-top:1px solid rgba(255,255,255,.10);display:flex;gap:10px;align-items:center;}
+    input{flex:1;padding:12px 14px;border-radius:14px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.20);color:var(--text);outline:none;min-width:0;}
+    input::placeholder{color:rgba(255,255,255,.45);}
+    .mic{width:54px;background:linear-gradient(45deg,#ff512f,#dd2476);border:none;}
+    .send{width:54px;border:none;background:linear-gradient(45deg,var(--p),#0088ff);}
 
-    .panelFooter{
-      margin-top:auto;
-      padding: 12px 14px;
-      border-top:1px solid rgba(255,255,255,.10);
-      font-size:12px;
-      color: var(--muted);
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-    .voiceRow{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
-    .voiceRow .lbl{font-size:12px; color:var(--muted)}
-    select{
-      padding:10px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.20);
-      color: var(--text);
-      outline:none;
-      min-width:260px;
-      max-width:100%;
-    }
-
-    .chatWrap{
-      background: var(--glass);
-      border:1px solid var(--border);
-      border-radius: var(--r);
-      backdrop-filter: blur(16px);
-      display:flex;
-      flex-direction:column;
-      overflow:hidden;
-      min-height:0;
-    }
-    .chatHead{
-      padding:14px 16px;
-      border-bottom:1px solid rgba(255,255,255,.10);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .status{font-size:12px; color: var(--muted); min-height:16px}
-    .actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
-    .btn{
-      border:none;
-      border-radius:14px;
-      padding:10px 12px;
-      cursor:pointer;
-      color:#fff;
-      background: rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.12);
-      transition:.2s;
-      font-size:12px;
-      user-select:none;
-      -webkit-user-select:none;
-    }
-    .btn:hover{ transform: translateY(-1px); }
-    .btn.danger{ background: rgba(255,0,85,.20); border:1px solid rgba(255,0,85,.35); }
-
-    .chat{
-      flex:1;
-      padding:14px 16px;
-      overflow:auto;
-      min-height:0;
-      line-height:1.5;
-      overscroll-behavior: contain;
-    }
-    .msg{ margin:0 0 12px 0; white-space:pre-wrap; word-break:break-word; }
-    .me{ color:#9adfff; }
-    .ai{ color: var(--text); }
-
-    .inputRow{
-      padding: 12px 12px;
-      padding-bottom: calc(12px + env(safe-area-inset-bottom));
-      border-top:1px solid rgba(255,255,255,.10);
-      display:flex;
-      gap:10px;
-      align-items:center;
-    }
-    input{
-      flex:1;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.20);
-      color: var(--text);
-      outline:none;
-      min-width:0;
-    }
-    input::placeholder{ color: rgba(255,255,255,.45); }
-    .mic{ width:54px; background: linear-gradient(45deg,#ff512f,#dd2476); border:none; }
-    .send{ width:54px; border:none; background: linear-gradient(45deg, var(--p), #0088ff); }
-
-    /* ===== Tablet ===== */
-    @media (max-width: 1100px){
-      .grid{grid-template-columns: repeat(2, 1fr);}
+    @media (max-width:1100px){
+      .grid{grid-template-columns:repeat(2,1fr);}
       .card{height:150px;}
       select{min-width:220px;}
-      .brand .s{max-width: 46vw;}
+      .brand .s{max-width:46vw;}
     }
-
-    /* ✅ FORCED MOBILE MODE (even if WebView uses desktop viewport) */
-    @media (pointer: coarse) and (orientation: portrait),
-           (max-aspect-ratio: 3/4) {
-      body{overflow:hidden;}
-
-      .stage{
-        position:fixed !important;
-        inset:0 !important;
-        width:100vw !important;
-        height:100vh !important;
-        top:0 !important;
-        transform:none !important;
-        border-radius:0 !important;
-      }
-      .app{
-        padding: 14px;
-        gap: 12px;
-      }
-      .topbar{padding: 12px;}
+    @media (pointer:coarse) and (orientation:portrait),(max-aspect-ratio:3/4){
+      .stage{position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;top:0!important;transform:none!important;border-radius:0!important;}
+      .app{padding:14px;gap:12px;}
+      .topbar{padding:12px;}
       .brand .t{font-size:16px}
-      .brand .s{max-width: 70vw; font-size:11px}
-
-      .main{
-        grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-      }
+      .brand .s{max-width:70vw;font-size:11px}
+      .main{grid-template-columns:1fr;grid-template-rows:auto 1fr;}
       .panelHead .note{display:none;}
-
-      /* personas: horizontal strip */
-      .grid{
-        display:flex;
-        flex-direction:row;
-        gap:10px;
-        overflow-x:auto;
-        overflow-y:hidden;
-        padding:12px;
-        scroll-snap-type:x mandatory;
-
-      }
-      .card{
-        flex:0 0 72%;
-        height:130px;
-        scroll-snap-align:start;
-      }
+      .grid{display:flex;flex-direction:row;gap:10px;overflow-x:auto;overflow-y:hidden;padding:12px;scroll-snap-type:x mandatory;}
+      .card{flex:0 0 72%;height:130px;scroll-snap-align:start;}
       .panelFooter{padding:10px 12px;}
-      .voiceRow{flex-direction:column; align-items:stretch; gap:8px;}
-      select{min-width:0; width:100%;}
+      .voiceRow{flex-direction:column;align-items:stretch;gap:8px;}
+      select{min-width:0;width:100%;}
       .chatHead{padding:12px;}
       .chat{padding:12px;}
-      .inputRow{padding:10px; padding-bottom: calc(10px + env(safe-area-inset-bottom));}
+      .inputRow{padding:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom));}
       .mic,.send{width:52px;}
     }
   </style>
@@ -365,11 +135,8 @@
   </div>
 
 <script>
-  // ===================== CONFIG =====================
-  // Render backend url (example): https://lowtabai.onrender.com
-  const BASE_URL = "https://j-learning.onrender.com/";
+  const BASE_URL = "https://lowtab-ai.onrender.com/"; // same domain
 
-  // ===================== DOM =====================
   const grid = document.getElementById("grid");
   const who = document.getElementById("who");
   const statusEl = document.getElementById("status");
@@ -379,11 +146,9 @@
   const voiceSelect = document.getElementById("voiceSelect");
   const autoVoiceBtn = document.getElementById("autoVoiceBtn");
 
-  // ===================== STATE =====================
   let personas = [];
   let currentPersona = null;
 
-  // ===================== STORAGE =====================
   const LS_KEY = "lowtab_persona_chats_v5";
   const LS_VOICE_KEY = "lowtab_persona_voice_v2";
 
@@ -398,79 +163,59 @@
   const getSavedVoiceName = (personaId) => (loadVoiceStore()[personaId] || "");
   const setSavedVoiceName = (personaId, voiceName) => { const s = loadVoiceStore(); s[personaId] = voiceName; saveVoiceStore(s); };
 
-  // ===================== FALLBACK PERSONAS (always show cards) =====================
-  const FALLBACK_PERSONAS = [
-    { id:"scientist",  label:"🔬 Учёный",     tagline:"умно • ясно • уверенно", tts:{enabled:true, lang:"ru-RU", rate:0.98, pitch:0.90, volume:1.0, style:"calm", voice_hint:["pavel","dmitry","yuri","google","neural","premium","male"]} },
-    { id:"anime",      label:"✨ Анимешник",  tagline:"энергично • ярко • дружелюбно", tts:{enabled:true, lang:"ru-RU", rate:1.06, pitch:1.12, volume:1.0, style:"bright", voice_hint:["irina","svetlana","tatyana","google","neural","premium","female"]} },
-    { id:"detective",  label:"🕵️ Детектив",  tagline:"холодно • точно • по делу", tts:{enabled:true, lang:"ru-RU", rate:0.94, pitch:0.80, volume:1.0, style:"dry", voice_hint:["dmitry","pavel","yuri","google","neural","premium","male"]} },
-    { id:"buddy",      label:"😄 Дружище",   tagline:"тёпло • с юмором • поддержка", tts:{enabled:true, lang:"ru-RU", rate:1.01, pitch:1.02, volume:1.0, style:"warm", voice_hint:["pavel","irina","google","neural","premium"]} },
-    { id:"coach",      label:"🚀 Коуч",       tagline:"фокус • мотивация • шаги", tts:{enabled:true, lang:"ru-RU", rate:1.03, pitch:0.95, volume:1.0, style:"push", voice_hint:["pavel","dmitry","google","neural","premium","male"]} },
-    { id:"philosopher",label:"🌓 Философ",    tagline:"глубоко • спокойно • смысл", tts:{enabled:true, lang:"ru-RU", rate:0.97, pitch:0.86, volume:1.0, style:"soft", voice_hint:["yuri","pavel","google","neural","premium","male"]} },
-  ];
+  function setStatus(t){ statusEl.textContent = t; }
 
-  // ===================== UI HELPERS =====================
-  function setStatus(t) { statusEl.textContent = t; }
-
-  function renderChat(id) {
+  function renderChat(id){
     chatBox.innerHTML = "";
     const msgs = getChat(id);
-    if (!msgs.length) {
-      const p = document.createElement("p");
-      p.className = "msg ai";
-      p.textContent = "Начнём 🙂 Напиши сообщение.";
+    if(!msgs.length){
+      const p=document.createElement("p");
+      p.className="msg ai";
+      p.textContent="Начнём 🙂 Напиши сообщение.";
       chatBox.appendChild(p);
       return;
     }
-    msgs.forEach(m => {
-      const p = document.createElement("p");
-      p.className = "msg " + (m.role === "user" ? "me" : "ai");
-      p.textContent = (m.role === "user" ? "Вы: " : "AI: ") + m.content;
+    msgs.forEach(m=>{
+      const p=document.createElement("p");
+      p.className="msg "+(m.role==="user"?"me":"ai");
+      p.textContent=(m.role==="user"?"Вы: ":"AI: ")+m.content;
       chatBox.appendChild(p);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
   }
 
-  function renderPersonas(list) {
+  function renderPersonas(list){
     personas = list || [];
     grid.innerHTML = "";
-
-    if (!personas.length) {
-      grid.innerHTML = `<div style="padding:12px;color:#a6b6d6;font-size:12px">Персонажи не загружены.</div>`;
-      return;
-    }
-
-    personas.forEach(p => {
-      const d = document.createElement("div");
-      d.className = "card";
-      d.dataset.id = p.id;
+    personas.forEach(p=>{
+      const d=document.createElement("div");
+      d.className="card";
+      d.dataset.id=p.id;
       d.innerHTML = `
         <div class="portrait"></div>
         <div class="cardInfo">
           <div class="name">${p.label}</div>
           <div class="tag">${p.tagline}</div>
-        </div>
-      `;
-      d.onclick = () => selectPersona(p);
+        </div>`;
+      d.onclick=()=>selectPersona(p);
       grid.appendChild(d);
     });
   }
 
-  function selectPersona(p) {
+  function selectPersona(p){
     stopSpeech();
-    currentPersona = p;
-
+    currentPersona=p;
     who.textContent = `Персонаж: ${p.label}`;
-    document.querySelectorAll(".card").forEach(el => el.classList.remove("active"));
-    const card = document.querySelector(`.card[data-id="${p.id}"]`);
-    if (card) card.classList.add("active");
-
+    document.querySelectorAll(".card").forEach(el=>el.classList.remove("active"));
+    const card=document.querySelector(`.card[data-id="${p.id}"]`);
+    if(card) card.classList.add("active");
     fillVoiceDropdown(p);
     renderChat(p.id);
     setStatus(`Вы выбрали: ${p.label}. Напиши сообщение.`);
   }
 
-  function clearCurrentChat() {
-    if (!currentPersona) return;
+  function clearCurrentChat(){
+    if(!currentPersona) return;
     stopSpeech();
     setChat(currentPersona.id, []);
     renderChat(currentPersona.id);
@@ -478,313 +223,226 @@
   }
   window.clearCurrentChat = clearCurrentChat;
 
-  // ===================== VOICES =====================
+  // ---------- voices ----------
   let voicesCache = [];
-
-  function listVoices() {
-    const v = speechSynthesis.getVoices() || [];
-    voicesCache = v;
-    return v;
-  }
-  function normalize(str) { return (str || "").toLowerCase(); }
-
-  function voiceScore(v, persona) {
-    const name = normalize(v.name);
-    const lang = normalize(v.lang);
-    const personaHints = (persona?.tts?.voice_hint || []).map(normalize);
-
-    let s = 0;
-    if (lang === "ru-ru") s += 80;
-    else if (lang.startsWith("ru")) s += 55;
-
-    if (name.includes("google")) s += 35;
-    if (name.includes("microsoft")) s += 18;
-    if (name.includes("yandex")) s += 18;
-    if (name.includes("neural")) s += 25;
-    if (name.includes("premium")) s += 20;
-    if (v.localService) s += 8;
-
-    for (const h of personaHints) if (h && name.includes(h)) s += 12;
-
-    if (name.includes("default")) s -= 8;
+  function normalize(s){ return (s||"").toLowerCase(); }
+  function listVoices(){ const v=speechSynthesis.getVoices()||[]; voicesCache=v; return v; }
+  function voiceScore(v){
+    const name=normalize(v.name), lang=normalize(v.lang);
+    let s=0;
+    if(lang==="ru-ru") s+=80; else if(lang.startsWith("ru")) s+=55;
+    if(name.includes("google")) s+=35;
+    if(name.includes("neural")) s+=25;
+    if(name.includes("premium")) s+=20;
+    if(v.localService) s+=8;
+    if(name.includes("default")) s-=8;
     return s;
   }
-
-  function pickBestVoiceForPersona(persona) {
-    const voices = listVoices();
-    if (!voices.length) return null;
-
-    const ru = voices.filter(v => normalize(v.lang).startsWith("ru"));
-    const pool = ru.length ? ru : voices;
-    const sorted = pool.slice().sort((a, b) => voiceScore(b, persona) - voiceScore(a, persona));
-    return sorted[0] || null;
+  function pickBestVoice(){
+    const voices=listVoices(); if(!voices.length) return null;
+    const ru=voices.filter(v=>normalize(v.lang).startsWith("ru"));
+    const pool=ru.length?ru:voices;
+    pool.sort((a,b)=>voiceScore(b)-voiceScore(a));
+    return pool[0]||null;
   }
-
-  function fillVoiceDropdown(persona) {
-    const voices = listVoices();
-    voiceSelect.innerHTML = "";
-
-    const ru = voices.filter(v => normalize(v.lang).startsWith("ru"));
-    const other = voices.filter(v => !normalize(v.lang).startsWith("ru"));
-    const ordered = ru.concat(other);
-
-    const opt0 = document.createElement("option");
-    opt0.value = "";
-    opt0.textContent = "Авто (лучший голос)";
+  function fillVoiceDropdown(persona){
+    const voices=listVoices();
+    voiceSelect.innerHTML="";
+    const opt0=document.createElement("option");
+    opt0.value=""; opt0.textContent="Авто (лучший голос)";
     voiceSelect.appendChild(opt0);
 
-    for (const v of ordered) {
-      const o = document.createElement("option");
-      o.value = v.name;
-      o.textContent = `${v.name} — ${v.lang}`;
+    const ru=voices.filter(v=>normalize(v.lang).startsWith("ru"));
+    const other=voices.filter(v=>!normalize(v.lang).startsWith("ru"));
+    const ordered=ru.concat(other);
+
+    for(const v of ordered){
+      const o=document.createElement("option");
+      o.value=v.name; o.textContent=`${v.name} — ${v.lang}`;
       voiceSelect.appendChild(o);
     }
-
-    const saved = persona ? getSavedVoiceName(persona.id) : "";
-    voiceSelect.value = saved || "";
+    voiceSelect.value = getSavedVoiceName(persona.id) || "";
   }
+  speechSynthesis.onvoiceschanged = ()=>{ if(currentPersona) fillVoiceDropdown(currentPersona); };
 
-  function initVoices() {
-    listVoices();
-    if (currentPersona) fillVoiceDropdown(currentPersona);
-  }
-  speechSynthesis.onvoiceschanged = initVoices;
-  initVoices();
-
-  voiceSelect.addEventListener("change", () => {
-    if (!currentPersona) { setStatus("Сначала выбери персонажа."); return; }
-    const val = voiceSelect.value || "";
-    setSavedVoiceName(currentPersona.id, val);
-    setStatus(val ? "Голос сохранён для персонажа." : "Автовыбор голоса включён.");
+  voiceSelect.addEventListener("change", ()=>{
+    if(!currentPersona) return;
+    setSavedVoiceName(currentPersona.id, voiceSelect.value || "");
+    setStatus(voiceSelect.value ? "Голос сохранён." : "Автовыбор включён.");
   });
-
-  autoVoiceBtn.addEventListener("click", () => {
-    if (!currentPersona) { setStatus("Сначала выбери персонажа."); return; }
-    voiceSelect.value = "";
+  autoVoiceBtn.addEventListener("click", ()=>{
+    if(!currentPersona) return;
+    voiceSelect.value="";
     setSavedVoiceName(currentPersona.id, "");
-    setStatus("Автовыбор: включено.");
+    setStatus("Автовыбор включён.");
   });
 
-  function getSelectedVoice(persona) {
-    const selected = voiceSelect.value || "";
-    if (selected) {
-      const v = voicesCache.find(x => x.name === selected);
-      return v || null;
-    }
-    return pickBestVoiceForPersona(persona);
-  }
-
-  // ===================== TTS (chunked) =====================
-  let ttsQueue = [];
-  let speakingNow = false;
-
-  function stopSpeech() {
-    ttsQueue = [];
-    speakingNow = false;
-    if (speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+  // ---------- TTS chunk ----------
+  let ttsQueue=[], speakingNow=false;
+  function stopSpeech(){
+    ttsQueue=[]; speakingNow=false;
+    if(speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
   }
   window.stopSpeech = stopSpeech;
 
-  function sanitizeForTTS(text) {
-    return (text || "")
-      .replace(/```[\s\S]*?```/g, " ")
-      .replace(/https?:\/\/\S+/g, " ")
-      .replace(/[*+/=\\|<>~^_`]/g, " ")
-      .replace(/[-–—]+/g, " ")
-      .replace(/\s+/g, " ")
+  function sanitizeForTTS(text){
+    return (text||"").replace(/```[\s\S]*?```/g," ")
+      .replace(/https?:\/\/\S+/g," ")
+      .replace(/[*+/=\\|<>~^_`]/g," ")
+      .replace(/[-–—]+/g," ")
+      .replace(/\s+/g," ")
       .trim();
   }
-
-  function splitToChunksBySentences(text, maxLen = 220) {
-    const clean = sanitizeForTTS(text);
-    if (!clean) return [];
+  function splitToChunks(text, maxLen=220){
+    const clean=sanitizeForTTS(text);
+    if(!clean) return [];
     const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
-
-    const chunks = [];
-    let buf = "";
-    for (const s of sentences) {
-      const piece = s.trim();
-      if (!piece) continue;
-
-      if ((buf + " " + piece).trim().length <= maxLen) {
-        buf = (buf ? (buf + " " + piece) : piece);
-      } else {
-        if (buf) chunks.push(buf.trim());
-        if (piece.length > maxLen) {
-          let start = 0;
-          while (start < piece.length) {
-            chunks.push(piece.slice(start, start + maxLen).trim());
-            start += maxLen;
-          }
-          buf = "";
-        } else {
-          buf = piece;
-        }
+    const out=[]; let buf="";
+    for(const s of sentences){
+      const piece=s.trim(); if(!piece) continue;
+      if(((buf?" "+buf:"")+piece).trim().length<=maxLen){
+        buf = buf ? (buf+" "+piece) : piece;
+      }else{
+        if(buf) out.push(buf.trim());
+        buf = piece;
       }
     }
-    if (buf) chunks.push(buf.trim());
-    return chunks;
+    if(buf) out.push(buf.trim());
+    return out;
   }
+  function jitter(n, amp){ return n + (Math.random()*2-1)*amp; }
 
-  function applyMicroProsody(text, personaStyle) {
-    let t = text;
-    if (personaStyle === "dry") t = t.replace(/,\s*/g, ". ");
-    else if (personaStyle === "warm") t = t.replace(/\.\s+/g, ".  ");
-    else if (personaStyle === "bright") t = t.replace(/!\s+/g, "!  ");
-    else if (personaStyle === "soft") t = t.replace(/\.\s+/g, ".  ");
-    return t;
-  }
-
-  function jitter(n, amp) {
-    const r = (Math.random() * 2 - 1) * amp;
-    return n + r;
-  }
-
-  function speakFull(text, tts, persona) {
+  function speakFull(text, tts){
     stopSpeech();
-    if (!tts || tts.enabled === false) return;
-
-    const chunks = splitToChunksBySentences(text, 220);
-    if (!chunks.length) return;
-
-    ttsQueue = chunks.map(c => applyMicroProsody(c, tts.style || ""));
-    speakingNow = true;
-    speakNext(tts, persona);
+    if(!tts || tts.enabled===false) return;
+    const chunks=splitToChunks(text, 220);
+    if(!chunks.length) return;
+    ttsQueue = chunks;
+    speakingNow=true;
+    speakNext(tts);
   }
+  function speakNext(tts){
+    if(!speakingNow) return;
+    if(!ttsQueue.length){ speakingNow=false; return; }
 
-  function speakNext(tts, persona) {
-    if (!speakingNow) return;
-    if (!ttsQueue.length) { speakingNow = false; return; }
-
-    const chunk = ttsQueue.shift();
-    const u = new SpeechSynthesisUtterance(chunk);
-
+    const u = new SpeechSynthesisUtterance(ttsQueue.shift());
     u.lang = tts.lang || "ru-RU";
-    const v = getSelectedVoice(persona);
-    if (v) u.voice = v;
 
-    const baseRate = (typeof tts.rate === "number") ? tts.rate : 1.0;
-    const basePitch = (typeof tts.pitch === "number") ? tts.pitch : 1.0;
+    const chosen = voiceSelect.value ? voicesCache.find(v=>v.name===voiceSelect.value) : pickBestVoice();
+    if(chosen) u.voice = chosen;
 
+    const baseRate = typeof tts.rate==="number" ? tts.rate : 1.0;
+    const basePitch= typeof tts.pitch==="number"? tts.pitch:1.0;
     u.rate = Math.max(0.85, Math.min(1.18, jitter(baseRate, 0.03)));
-    u.pitch = Math.max(0.70, Math.min(1.30, jitter(basePitch, 0.03)));
-    u.volume = (typeof tts.volume === "number") ? tts.volume : 1.0;
+    u.pitch= Math.max(0.70, Math.min(1.30, jitter(basePitch,0.03)));
+    u.volume = typeof tts.volume==="number" ? tts.volume : 1.0;
 
-    u.onend = () => setTimeout(() => speakNext(tts, persona), 140);
-    u.onerror = () => { speakingNow = false; ttsQueue = []; };
+    u.onend = ()=> setTimeout(()=>speakNext(tts), 140);
+    u.onerror = ()=>{ speakingNow=false; ttsQueue=[]; };
 
     speechSynthesis.speak(u);
   }
 
-  // ===================== BACKEND =====================
-  function buildHistoryForAPI(id) {
-    return getChat(id).slice(-10).map(m => ({
-      role: m.role === "user" ? "user" : "assistant",
-      content: m.content
-    }));
+  // ---------- backend ----------
+  function buildHistoryForAPI(id){
+    return getChat(id).slice(-10).map(m=>({ role: m.role==="user"?"user":"assistant", content:m.content }));
   }
 
-  async function loadPersonas() {
+  async function loadPersonas(){
     setStatus("Загружаю персонажей...");
-
-    // Always show cards immediately (UI won't be empty)
-    renderPersonas(FALLBACK_PERSONAS);
-
-    try {
-      const res = await fetch(`${BASE_URL}/personas`, { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-
+    try{
+      const res = await fetch(`${BASE_URL}/personas`, { cache:"no-store" });
       const data = await res.json();
-      const serverPersonas = data.personas || [];
-
-      if (serverPersonas.length) {
-        renderPersonas(serverPersonas);
-        selectPersona(serverPersonas[0]);
+      renderPersonas(data.personas || []);
+      if((data.personas||[]).length){
+        selectPersona(data.personas[0]);
         setStatus("Готов ✅");
-      } else {
-        selectPersona(FALLBACK_PERSONAS[0]);
-        setStatus("Сервер ответил, но список пуст. Использую локальные персонажи.");
+      }else{
+        setStatus("Список персонажей пуст.");
       }
-    } catch (e) {
+    }catch(e){
       console.error(e);
-      selectPersona(FALLBACK_PERSONAS[0]);
-      setStatus("Нет связи с сервером. Персонажи локально. Проверь BASE_URL/интернет.");
+      setStatus("Нет связи с сервером.");
     }
   }
 
-  async function sendMessage() {
-    const text = (input.value || "").trim();
-    if (!text) return;
-    if (!currentPersona) { setStatus("Сначала выбери персонажа."); return; }
+  async function sendMessage(){
+    const text=(input.value||"").trim();
+    if(!text) return;
+    if(!currentPersona){ setStatus("Сначала выбери персонажа."); return; }
 
-    input.value = "";
-    appendChat(currentPersona.id, "user", text);
+    input.value="";
+    appendChat(currentPersona.id,"user",text);
     renderChat(currentPersona.id);
     setStatus("Думаю...");
 
-    try {
+    try{
       const payload = { persona: currentPersona.id, message: text, history: buildHistoryForAPI(currentPersona.id) };
 
+      const controller = new AbortController();
+      const timer = setTimeout(()=>controller.abort(), 60000);
+
       const res = await fetch(`${BASE_URL}/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
         body: JSON.stringify(payload),
+        signal: controller.signal
       });
 
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      const data = await res.json();
+      clearTimeout(timer);
 
-      const answer = (data.response || "").trim() || "…";
-      appendChat(currentPersona.id, "assistant", answer);
+      const data = await res.json().catch(()=>({}));
+
+      if(!res.ok){
+        const errTxt = (data && (data.error || data.detail)) ? ` (${data.error || data.detail})` : "";
+        appendChat(currentPersona.id,"assistant", "Ошибка на сервере" + errTxt);
+        renderChat(currentPersona.id);
+        setStatus("Ошибка");
+        return;
+      }
+
+      const answer = (data.response||"").trim() || "…";
+      appendChat(currentPersona.id,"assistant",answer);
       renderChat(currentPersona.id);
       setStatus("Готов ✅");
 
-      const ttsText = (data.tts_text || answer);
-      speakFull(ttsText, data.tts || currentPersona.tts, currentPersona);
+      speakFull(data.tts_text || answer, data.tts || currentPersona.tts);
 
-    } catch (e) {
+    }catch(e){
       console.error(e);
-      appendChat(currentPersona.id, "assistant", "Ошибка соединения с сервером.");
+      const msg = String(e).includes("AbortError")
+        ? "Сервер просыпается или долго отвечает. Подожди 10–20 секунд и отправь ещё раз."
+        : "Ошибка соединения с сервером.";
+      appendChat(currentPersona.id,"assistant", msg);
       renderChat(currentPersona.id);
       setStatus("Ошибка");
     }
   }
   window.sendMessage = sendMessage;
 
-  // ===================== STT (WebView often doesn't support it) =====================
-  let recognition = null, listening = false;
-
-  function toggleMic() {
+  // ---------- STT ----------
+  let recognition=null, listening=false;
+  function toggleMic(){
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert("Голосовой ввод в WebView часто не поддерживается. Открой в Chrome или сделаем STT через сервер (Whisper).");
+    if(!SpeechRecognition){
+      alert("Голосовой ввод в WebView часто не поддерживается. Лучше Chrome. Или сделаем STT через сервер (Whisper).");
       return;
     }
-    if (!recognition) {
+    if(!recognition){
       recognition = new SpeechRecognition();
-      recognition.lang = "ru-RU";
-      recognition.interimResults = false;
-      recognition.onresult = (e) => {
-        input.value = e.results?.[0]?.[0]?.transcript || "";
-        sendMessage();
-      };
-      recognition.onend = () => { listening = false; micBtn.textContent = "🎤"; };
-      recognition.onerror = () => { listening = false; micBtn.textContent = "🎤"; };
+      recognition.lang="ru-RU";
+      recognition.interimResults=false;
+      recognition.onresult=(e)=>{ input.value = e.results?.[0]?.[0]?.transcript || ""; sendMessage(); };
+      recognition.onend=()=>{ listening=false; micBtn.textContent="🎤"; };
+      recognition.onerror=()=>{ listening=false; micBtn.textContent="🎤"; };
     }
-    if (!listening) {
-      listening = true;
-      micBtn.textContent = "🔴";
-      recognition.start();
-    } else {
-      recognition.stop();
-    }
+    if(!listening){ listening=true; micBtn.textContent="🔴"; recognition.start(); }
+    else recognition.stop();
   }
   window.toggleMic = toggleMic;
 
-  // ===================== EVENTS =====================
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") sendMessage(); });
+  input.addEventListener("keydown",(e)=>{ if(e.key==="Enter") sendMessage(); });
 
-  // Boot
   loadPersonas();
 </script>
 </body>

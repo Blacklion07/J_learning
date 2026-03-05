@@ -1,5 +1,6 @@
 import os
 import re
+import traceback
 from typing import List, Dict, Any, Optional
 
 from fastapi import FastAPI, Request
