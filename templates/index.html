@@ -135,7 +135,7 @@
   </div>
 
 <script>
-  const BASE_URL = "https://lowtab-ai.onrender.com/"; // same domain
+  const BASE_URL = ""; // same domain
 
   const grid = document.getElementById("grid");
   const who = document.getElementById("who");
@@ -163,6 +163,16 @@
   const getSavedVoiceName = (personaId) => (loadVoiceStore()[personaId] || "");
   const setSavedVoiceName = (personaId, voiceName) => { const s = loadVoiceStore(); s[personaId] = voiceName; saveVoiceStore(s); };
 
+  // ✅ fallback (always show cards)
+  const FALLBACK_PERSONAS = [
+    { id:"scientist",  label:"🔬 Учёный",     tagline:"умно • ясно • уверенно", tts:{enabled:true, lang:"ru-RU", rate:0.98, pitch:0.90, volume:1.0, style:"calm"} },
+    { id:"anime",      label:"✨ Анимешник",  tagline:"энергично • ярко • дружелюбно", tts:{enabled:true, lang:"ru-RU", rate:1.06, pitch:1.12, volume:1.0, style:"bright"} },
+    { id:"detective",  label:"🕵️ Детектив",  tagline:"холодно • точно • по делу", tts:{enabled:true, lang:"ru-RU", rate:0.94, pitch:0.80, volume:1.0, style:"dry"} },
+    { id:"buddy",      label:"😄 Дружище",   tagline:"тёпло • с юмором • поддержка", tts:{enabled:true, lang:"ru-RU", rate:1.01, pitch:1.02, volume:1.0, style:"warm"} },
+    { id:"coach",      label:"🚀 Коуч",       tagline:"фокус • мотивация • шаги", tts:{enabled:true, lang:"ru-RU", rate:1.03, pitch:0.95, volume:1.0, style:"push"} },
+    { id:"philosopher",label:"🌓 Философ",    tagline:"глубоко • спокойно • смысл", tts:{enabled:true, lang:"ru-RU", rate:0.97, pitch:0.86, volume:1.0, style:"soft"} },
+  ];
+
   function setStatus(t){ statusEl.textContent = t; }
 
   function renderChat(id){
@@ -185,8 +195,9 @@
   }
 
   function renderPersonas(list){
-    personas = list || [];
+    personas = Array.isArray(list) ? list : [];
     grid.innerHTML = "";
+
     personas.forEach(p=>{
       const d=document.createElement("div");
       d.className="card";
@@ -201,6 +212,11 @@
       grid.appendChild(d);
     });
   }
+
+  function stopSpeech(){
+    if(speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+  }
+  window.stopSpeech = stopSpeech;
 
   function selectPersona(p){
     stopSpeech();
@@ -223,28 +239,10 @@
   }
   window.clearCurrentChat = clearCurrentChat;
 
-  // ---------- voices ----------
+  // voices
   let voicesCache = [];
   function normalize(s){ return (s||"").toLowerCase(); }
   function listVoices(){ const v=speechSynthesis.getVoices()||[]; voicesCache=v; return v; }
-  function voiceScore(v){
-    const name=normalize(v.name), lang=normalize(v.lang);
-    let s=0;
-    if(lang==="ru-ru") s+=80; else if(lang.startsWith("ru")) s+=55;
-    if(name.includes("google")) s+=35;
-    if(name.includes("neural")) s+=25;
-    if(name.includes("premium")) s+=20;
-    if(v.localService) s+=8;
-    if(name.includes("default")) s-=8;
-    return s;
-  }
-  function pickBestVoice(){
-    const voices=listVoices(); if(!voices.length) return null;
-    const ru=voices.filter(v=>normalize(v.lang).startsWith("ru"));
-    const pool=ru.length?ru:voices;
-    pool.sort((a,b)=>voiceScore(b)-voiceScore(a));
-    return pool[0]||null;
-  }
   function fillVoiceDropdown(persona){
     const voices=listVoices();
     voiceSelect.innerHTML="";
@@ -277,92 +275,32 @@
     setStatus("Автовыбор включён.");
   });
 
-  // ---------- TTS chunk ----------
-  let ttsQueue=[], speakingNow=false;
-  function stopSpeech(){
-    ttsQueue=[]; speakingNow=false;
-    if(speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
-  }
-  window.stopSpeech = stopSpeech;
-
-  function sanitizeForTTS(text){
-    return (text||"").replace(/```[\s\S]*?```/g," ")
-      .replace(/https?:\/\/\S+/g," ")
-      .replace(/[*+/=\\|<>~^_`]/g," ")
-      .replace(/[-–—]+/g," ")
-      .replace(/\s+/g," ")
-      .trim();
-  }
-  function splitToChunks(text, maxLen=220){
-    const clean=sanitizeForTTS(text);
-    if(!clean) return [];
-    const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
-    const out=[]; let buf="";
-    for(const s of sentences){
-      const piece=s.trim(); if(!piece) continue;
-      if(((buf?" "+buf:"")+piece).trim().length<=maxLen){
-        buf = buf ? (buf+" "+piece) : piece;
-      }else{
-        if(buf) out.push(buf.trim());
-        buf = piece;
-      }
-    }
-    if(buf) out.push(buf.trim());
-    return out;
-  }
-  function jitter(n, amp){ return n + (Math.random()*2-1)*amp; }
-
-  function speakFull(text, tts){
-    stopSpeech();
-    if(!tts || tts.enabled===false) return;
-    const chunks=splitToChunks(text, 220);
-    if(!chunks.length) return;
-    ttsQueue = chunks;
-    speakingNow=true;
-    speakNext(tts);
-  }
-  function speakNext(tts){
-    if(!speakingNow) return;
-    if(!ttsQueue.length){ speakingNow=false; return; }
-
-    const u = new SpeechSynthesisUtterance(ttsQueue.shift());
-    u.lang = tts.lang || "ru-RU";
-
-    const chosen = voiceSelect.value ? voicesCache.find(v=>v.name===voiceSelect.value) : pickBestVoice();
-    if(chosen) u.voice = chosen;
-
-    const baseRate = typeof tts.rate==="number" ? tts.rate : 1.0;
-    const basePitch= typeof tts.pitch==="number"? tts.pitch:1.0;
-    u.rate = Math.max(0.85, Math.min(1.18, jitter(baseRate, 0.03)));
-    u.pitch= Math.max(0.70, Math.min(1.30, jitter(basePitch,0.03)));
-    u.volume = typeof tts.volume==="number" ? tts.volume : 1.0;
-
-    u.onend = ()=> setTimeout(()=>speakNext(tts), 140);
-    u.onerror = ()=>{ speakingNow=false; ttsQueue=[]; };
-
-    speechSynthesis.speak(u);
-  }
-
-  // ---------- backend ----------
+  // chat
   function buildHistoryForAPI(id){
     return getChat(id).slice(-10).map(m=>({ role: m.role==="user"?"user":"assistant", content:m.content }));
   }
 
   async function loadPersonas(){
+    // ✅ show immediately
+    renderPersonas(FALLBACK_PERSONAS);
+    selectPersona(FALLBACK_PERSONAS[0]);
     setStatus("Загружаю персонажей...");
+
     try{
       const res = await fetch(`${BASE_URL}/personas`, { cache:"no-store" });
-      const data = await res.json();
-      renderPersonas(data.personas || []);
-      if((data.personas||[]).length){
-        selectPersona(data.personas[0]);
+      const data = await res.json().catch(()=>({}));
+      const serverList = data.personas || [];
+
+      if(Array.isArray(serverList) && serverList.length){
+        renderPersonas(serverList);
+        selectPersona(serverList[0]);
         setStatus("Готов ✅");
       }else{
-        setStatus("Список персонажей пуст.");
+        setStatus("Сервер вернул пустой список. Использую локальные персонажи.");
       }
     }catch(e){
       console.error(e);
-      setStatus("Нет связи с сервером.");
+      setStatus("Нет связи с сервером. Использую локальные персонажи.");
     }
   }
 
@@ -378,24 +316,17 @@
 
     try{
       const payload = { persona: currentPersona.id, message: text, history: buildHistoryForAPI(currentPersona.id) };
-
-      const controller = new AbortController();
-      const timer = setTimeout(()=>controller.abort(), 60000);
-
       const res = await fetch(`${BASE_URL}/chat`, {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify(payload),
-        signal: controller.signal
+        body: JSON.stringify(payload)
       });
-
-      clearTimeout(timer);
 
       const data = await res.json().catch(()=>({}));
 
       if(!res.ok){
-        const errTxt = (data && (data.error || data.detail)) ? ` (${data.error || data.detail})` : "";
-        appendChat(currentPersona.id,"assistant", "Ошибка на сервере" + errTxt);
+        const err = data.error || data.detail || ("HTTP "+res.status);
+        appendChat(currentPersona.id,"assistant", "Ошибка на сервере: " + err);
         renderChat(currentPersona.id);
         setStatus("Ошибка");
         return;
@@ -406,35 +337,37 @@
       renderChat(currentPersona.id);
       setStatus("Готов ✅");
 
-      speakFull(data.tts_text || answer, data.tts || currentPersona.tts);
+      // simple speak
+      if(data.tts && data.tts.enabled !== false){
+        stopSpeech();
+        const u = new SpeechSynthesisUtterance((data.tts_text||answer).slice(0,1200));
+        u.lang = (data.tts.lang || "ru-RU");
+        u.rate = data.tts.rate ?? 1.0;
+        u.pitch = data.tts.pitch ?? 1.0;
+        u.volume = data.tts.volume ?? 1.0;
+        speechSynthesis.speak(u);
+      }
 
     }catch(e){
       console.error(e);
-      const msg = String(e).includes("AbortError")
-        ? "Сервер просыпается или долго отвечает. Подожди 10–20 секунд и отправь ещё раз."
-        : "Ошибка соединения с сервером.";
-      appendChat(currentPersona.id,"assistant", msg);
+      appendChat(currentPersona.id,"assistant","Ошибка соединения с сервером.");
       renderChat(currentPersona.id);
       setStatus("Ошибка");
     }
   }
   window.sendMessage = sendMessage;
 
-  // ---------- STT ----------
+  // mic (webview ko‘pincha support qilmaydi)
   let recognition=null, listening=false;
   function toggleMic(){
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SpeechRecognition){
-      alert("Голосовой ввод в WebView часто не поддерживается. Лучше Chrome. Или сделаем STT через сервер (Whisper).");
-      return;
-    }
+    if(!SpeechRecognition){ alert("В WebView микрофон часто не работает. Лучше Chrome."); return; }
     if(!recognition){
       recognition = new SpeechRecognition();
       recognition.lang="ru-RU";
       recognition.interimResults=false;
       recognition.onresult=(e)=>{ input.value = e.results?.[0]?.[0]?.transcript || ""; sendMessage(); };
       recognition.onend=()=>{ listening=false; micBtn.textContent="🎤"; };
-      recognition.onerror=()=>{ listening=false; micBtn.textContent="🎤"; };
     }
     if(!listening){ listening=true; micBtn.textContent="🔴"; recognition.start(); }
     else recognition.stop();
