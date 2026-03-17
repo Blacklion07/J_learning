@@ -46,6 +46,39 @@ def sanitize_for_tts(text: str) -> str:
     t = _MULTI_SPACE_RE.sub(" ", t).strip()
     return t
 
+def build_model():
+    preferred = [
+        "gemini-2.5-flash",
+        "gemini-flash-latest",
+        "gemini-pro-latest",
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-001",
+    ]
+
+    available = []
+    try:
+        for m in genai.list_models():
+            methods = getattr(m, "supported_generation_methods", []) or []
+            if "generateContent" in methods:
+                name = getattr(m, "name", "")
+                if name.startswith("models/"):
+                    name = name.replace("models/", "", 1)
+                available.append(name)
+    except Exception:
+        available = []
+
+    for candidate in preferred:
+        if candidate in available:
+            print(f"Using Gemini model: {candidate}")
+            return genai.GenerativeModel(
+                model_name=candidate,
+                system_instruction="Ты русскоязычный собеседник с переключаемыми персонажами. Следуй инструкциям в запросе."
+            )
+
+    raise RuntimeError(f"Подходящая Gemini-модель не найдена. Доступные модели: {available}")
+
+
+model = build_model()
 
 def sanitize_for_ui(text: str) -> str:
     t = (text or "").strip()
@@ -153,7 +186,7 @@ PERSONAS: Dict[str, Dict[str, Any]] = {
 }
 
 model = genai.GenerativeModel(
-    model_name="gemini-1.5-flash",
+    model_name="gemini-2.5-flash",
     system_instruction="Ты русскоязычный собеседник с переключаемыми персонажами. Следуй инструкциям в запросе."
 )
 app = FastAPI()
@@ -260,13 +293,23 @@ async def chat(data: dict):
             "persona": {"id": persona_id, "label": persona["label"], "tagline": persona["tagline"]},
         }
 
+
     except Exception as e:
+
         return JSONResponse(
+
             status_code=500,
+
             content={
+
                 "error": str(e),
-                "response": "Ошибка на сервере. Попробуй ещё раз.",
+
+                "response": f"Ошибка на сервере: {str(e)}",
+
                 "tts": {"enabled": False},
+
                 "tts_text": ""
+
             }
+
         )
