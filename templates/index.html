@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
-  <title>LowtabAI — Персонажи</title>
+  <title>AI Voice Chat — Персонажи</title>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
-    /* (SENING CSS — o‘zgartirmadim, qisqartirmay qo‘y) */
     :root{--bg:#070a12;--glass:rgba(255,255,255,.06);--border:rgba(255,255,255,.12);--text:#eaf2ff;--muted:#a6b6d6;--p:#00e5ff;--s:#b400ff;--danger:#ff0055;--shadow:0 25px 80px rgba(0,0,0,.55);--r:22px;}
     *{box-sizing:border-box;margin:0;padding:0;font-family:Outfit,system-ui,Segoe UI,sans-serif}
     html,body{height:100%; width:100%;}
@@ -87,7 +86,7 @@
     <div class="app">
       <div class="topbar">
         <div class="brand">
-          <div class="t">LOWTAB AI</div>
+          <div class="t">AI VOICE CHAT</div>
           <div class="s">Персонажный голос • меньше “робота” • длинные ответы читаются полностью</div>
         </div>
         <div class="who" id="who">Персонаж: не выбран</div>
@@ -135,7 +134,7 @@
   </div>
 
 <script>
-  const BASE_URL = "https://lowtab-ai.onrender.com/"; // same domain
+  const BASE_URL = window.location.origin;
 
   const grid = document.getElementById("grid");
   const who = document.getElementById("who");
@@ -149,8 +148,8 @@
   let personas = [];
   let currentPersona = null;
 
-  const LS_KEY = "lowtab_persona_chats_v5";
-  const LS_VOICE_KEY = "lowtab_persona_voice_v2";
+  const LS_KEY = "ai_voice_chat_persona_chats_v1";
+  const LS_VOICE_KEY = "ai_voice_chat_persona_voice_v1";
 
   const loadStore = () => { try { return JSON.parse(localStorage.getItem(LS_KEY) || "{}"); } catch { return {}; } };
   const saveStore = (s) => localStorage.setItem(LS_KEY, JSON.stringify(s));
@@ -163,14 +162,13 @@
   const getSavedVoiceName = (personaId) => (loadVoiceStore()[personaId] || "");
   const setSavedVoiceName = (personaId, voiceName) => { const s = loadVoiceStore(); s[personaId] = voiceName; saveVoiceStore(s); };
 
-  // ✅ fallback (always show cards)
   const FALLBACK_PERSONAS = [
-    { id:"scientist",  label:"🔬 Учёный",     tagline:"умно • ясно • уверенно", tts:{enabled:true, lang:"ru-RU", rate:0.98, pitch:0.90, volume:1.0, style:"calm"} },
-    { id:"anime",      label:"✨ Анимешник",  tagline:"энергично • ярко • дружелюбно", tts:{enabled:true, lang:"ru-RU", rate:1.06, pitch:1.12, volume:1.0, style:"bright"} },
-    { id:"detective",  label:"🕵️ Детектив",  tagline:"холодно • точно • по делу", tts:{enabled:true, lang:"ru-RU", rate:0.94, pitch:0.80, volume:1.0, style:"dry"} },
-    { id:"buddy",      label:"😄 Дружище",   tagline:"тёпло • с юмором • поддержка", tts:{enabled:true, lang:"ru-RU", rate:1.01, pitch:1.02, volume:1.0, style:"warm"} },
-    { id:"coach",      label:"🚀 Коуч",       tagline:"фокус • мотивация • шаги", tts:{enabled:true, lang:"ru-RU", rate:1.03, pitch:0.95, volume:1.0, style:"push"} },
-    { id:"philosopher",label:"🌓 Философ",    tagline:"глубоко • спокойно • смысл", tts:{enabled:true, lang:"ru-RU", rate:0.97, pitch:0.86, volume:1.0, style:"soft"} },
+    { id:"scientist",  label:"🔬 Учёный",      tagline:"умно • ясно • уверенно", tts:{enabled:true, lang:"ru-RU", rate:0.98, pitch:0.90, volume:1.0, style:"calm"} },
+    { id:"anime",      label:"✨ Анимешник",   tagline:"энергично • ярко • дружелюбно", tts:{enabled:true, lang:"ru-RU", rate:1.06, pitch:1.12, volume:1.0, style:"bright"} },
+    { id:"detective",  label:"🕵️ Детектив",   tagline:"холодно • точно • по делу", tts:{enabled:true, lang:"ru-RU", rate:0.94, pitch:0.80, volume:1.0, style:"dry"} },
+    { id:"buddy",      label:"😄 Дружище",    tagline:"тёпло • с юмором • поддержка", tts:{enabled:true, lang:"ru-RU", rate:1.01, pitch:1.02, volume:1.0, style:"warm"} },
+    { id:"coach",      label:"🚀 Коуч",        tagline:"фокус • мотивация • шаги", tts:{enabled:true, lang:"ru-RU", rate:1.03, pitch:0.95, volume:1.0, style:"push"} },
+    { id:"philosopher",label:"🌓 Философ",     tagline:"глубоко • спокойно • смысл", tts:{enabled:true, lang:"ru-RU", rate:0.97, pitch:0.86, volume:1.0, style:"soft"} },
   ];
 
   function setStatus(t){ statusEl.textContent = t; }
@@ -179,16 +177,16 @@
     chatBox.innerHTML = "";
     const msgs = getChat(id);
     if(!msgs.length){
-      const p=document.createElement("p");
-      p.className="msg ai";
-      p.textContent="Начнём 🙂 Напиши сообщение.";
+      const p = document.createElement("p");
+      p.className = "msg ai";
+      p.textContent = "Начнём 🙂 Напиши сообщение.";
       chatBox.appendChild(p);
       return;
     }
-    msgs.forEach(m=>{
-      const p=document.createElement("p");
-      p.className="msg "+(m.role==="user"?"me":"ai");
-      p.textContent=(m.role==="user"?"Вы: ":"AI: ")+m.content;
+    msgs.forEach(m => {
+      const p = document.createElement("p");
+      p.className = "msg " + (m.role === "user" ? "me" : "ai");
+      p.textContent = (m.role === "user" ? "Вы: " : "AI: ") + m.content;
       chatBox.appendChild(p);
     });
     chatBox.scrollTop = chatBox.scrollHeight;
@@ -198,32 +196,34 @@
     personas = Array.isArray(list) ? list : [];
     grid.innerHTML = "";
 
-    personas.forEach(p=>{
-      const d=document.createElement("div");
-      d.className="card";
-      d.dataset.id=p.id;
+    personas.forEach(p => {
+      const d = document.createElement("div");
+      d.className = "card";
+      d.dataset.id = p.id;
       d.innerHTML = `
         <div class="portrait"></div>
         <div class="cardInfo">
           <div class="name">${p.label}</div>
           <div class="tag">${p.tagline}</div>
         </div>`;
-      d.onclick=()=>selectPersona(p);
+      d.onclick = () => selectPersona(p);
       grid.appendChild(d);
     });
   }
 
   function stopSpeech(){
-    if(speechSynthesis.speaking || speechSynthesis.pending) speechSynthesis.cancel();
+    if(window.speechSynthesis && (speechSynthesis.speaking || speechSynthesis.pending)){
+      speechSynthesis.cancel();
+    }
   }
   window.stopSpeech = stopSpeech;
 
   function selectPersona(p){
     stopSpeech();
-    currentPersona=p;
+    currentPersona = p;
     who.textContent = `Персонаж: ${p.label}`;
-    document.querySelectorAll(".card").forEach(el=>el.classList.remove("active"));
-    const card=document.querySelector(`.card[data-id="${p.id}"]`);
+    document.querySelectorAll(".card").forEach(el => el.classList.remove("active"));
+    const card = document.querySelector(`.card[data-id="${p.id}"]`);
     if(card) card.classList.add("active");
     fillVoiceDropdown(p);
     renderChat(p.id);
@@ -239,63 +239,74 @@
   }
   window.clearCurrentChat = clearCurrentChat;
 
-  // voices
   let voicesCache = [];
-  function normalize(s){ return (s||"").toLowerCase(); }
-  function listVoices(){ const v=speechSynthesis.getVoices()||[]; voicesCache=v; return v; }
+  function normalize(s){ return (s || "").toLowerCase(); }
+  function listVoices(){ const v = speechSynthesis.getVoices() || []; voicesCache = v; return v; }
+
   function fillVoiceDropdown(persona){
-    const voices=listVoices();
-    voiceSelect.innerHTML="";
-    const opt0=document.createElement("option");
-    opt0.value=""; opt0.textContent="Авто (лучший голос)";
+    const voices = listVoices();
+    voiceSelect.innerHTML = "";
+
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = "Авто (лучший голос)";
     voiceSelect.appendChild(opt0);
 
-    const ru=voices.filter(v=>normalize(v.lang).startsWith("ru"));
-    const other=voices.filter(v=>!normalize(v.lang).startsWith("ru"));
-    const ordered=ru.concat(other);
+    const ru = voices.filter(v => normalize(v.lang).startsWith("ru"));
+    const other = voices.filter(v => !normalize(v.lang).startsWith("ru"));
+    const ordered = ru.concat(other);
 
     for(const v of ordered){
-      const o=document.createElement("option");
-      o.value=v.name; o.textContent=`${v.name} — ${v.lang}`;
+      const o = document.createElement("option");
+      o.value = v.name;
+      o.textContent = `${v.name} — ${v.lang}`;
       voiceSelect.appendChild(o);
     }
+
     voiceSelect.value = getSavedVoiceName(persona.id) || "";
   }
-  speechSynthesis.onvoiceschanged = ()=>{ if(currentPersona) fillVoiceDropdown(currentPersona); };
 
-  voiceSelect.addEventListener("change", ()=>{
+  speechSynthesis.onvoiceschanged = () => {
+    if(currentPersona) fillVoiceDropdown(currentPersona);
+  };
+
+  voiceSelect.addEventListener("change", () => {
     if(!currentPersona) return;
     setSavedVoiceName(currentPersona.id, voiceSelect.value || "");
     setStatus(voiceSelect.value ? "Голос сохранён." : "Автовыбор включён.");
   });
-  autoVoiceBtn.addEventListener("click", ()=>{
+
+  autoVoiceBtn.addEventListener("click", () => {
     if(!currentPersona) return;
-    voiceSelect.value="";
+    voiceSelect.value = "";
     setSavedVoiceName(currentPersona.id, "");
     setStatus("Автовыбор включён.");
   });
 
-  // chat
   function buildHistoryForAPI(id){
-    return getChat(id).slice(-10).map(m=>({ role: m.role==="user"?"user":"assistant", content:m.content }));
+    return getChat(id)
+      .slice(-10)
+      .map(m => ({
+        role: m.role === "user" ? "user" : "assistant",
+        content: m.content
+      }));
   }
 
   async function loadPersonas(){
-    // ✅ show immediately
     renderPersonas(FALLBACK_PERSONAS);
     selectPersona(FALLBACK_PERSONAS[0]);
     setStatus("Загружаю персонажей...");
 
     try{
-      const res = await fetch(`${BASE_URL}/personas`, { cache:"no-store" });
-      const data = await res.json().catch(()=>({}));
+      const res = await fetch(`${BASE_URL}/personas`, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
       const serverList = data.personas || [];
 
       if(Array.isArray(serverList) && serverList.length){
         renderPersonas(serverList);
         selectPersona(serverList[0]);
         setStatus("Готов ✅");
-      }else{
+      } else {
         setStatus("Сервер вернул пустой список. Использую локальные персонажи.");
       }
     }catch(e){
@@ -305,76 +316,124 @@
   }
 
   async function sendMessage(){
-    const text=(input.value||"").trim();
+    const text = (input.value || "").trim();
     if(!text) return;
-    if(!currentPersona){ setStatus("Сначала выбери персонажа."); return; }
+    if(!currentPersona){
+      setStatus("Сначала выбери персонажа.");
+      return;
+    }
 
-    input.value="";
-    appendChat(currentPersona.id,"user",text);
+    const historyBeforeSend = buildHistoryForAPI(currentPersona.id);
+
+    input.value = "";
+    appendChat(currentPersona.id, "user", text);
     renderChat(currentPersona.id);
     setStatus("Думаю...");
 
     try{
-      const payload = { persona: currentPersona.id, message: text, history: buildHistoryForAPI(currentPersona.id) };
+      const payload = {
+        persona: currentPersona.id,
+        message: text,
+        history: historyBeforeSend
+      };
+
       const res = await fetch(`${BASE_URL}/chat`, {
-        method:"POST",
-        headers:{ "Content-Type":"application/json" },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
 
-      const data = await res.json().catch(()=>({}));
+      const data = await res.json().catch(() => ({}));
 
       if(!res.ok){
-        const err = data.error || data.detail || ("HTTP "+res.status);
-        appendChat(currentPersona.id,"assistant", "Ошибка на сервере: " + err);
+        const err = data.error || data.detail || ("HTTP " + res.status);
+        appendChat(currentPersona.id, "assistant", "Ошибка на сервере: " + err);
         renderChat(currentPersona.id);
         setStatus("Ошибка");
         return;
       }
 
-      const answer = (data.response||"").trim() || "…";
-      appendChat(currentPersona.id,"assistant",answer);
+      const answer = (data.response || "").trim() || "…";
+      appendChat(currentPersona.id, "assistant", answer);
       renderChat(currentPersona.id);
       setStatus("Готов ✅");
 
-      // simple speak
-      if(data.tts && data.tts.enabled !== false){
+      if(data.tts && data.tts.enabled !== false && window.speechSynthesis){
         stopSpeech();
-        const u = new SpeechSynthesisUtterance((data.tts_text||answer).slice(0,1200));
-        u.lang = (data.tts.lang || "ru-RU");
+        const speakText = (data.tts_text || answer).slice(0, 1200);
+        const u = new SpeechSynthesisUtterance(speakText);
+        u.lang = data.tts.lang || "ru-RU";
         u.rate = data.tts.rate ?? 1.0;
         u.pitch = data.tts.pitch ?? 1.0;
         u.volume = data.tts.volume ?? 1.0;
+
+        const selectedName = voiceSelect.value || "";
+        const voices = listVoices();
+        let chosenVoice = null;
+
+        if(selectedName){
+          chosenVoice = voices.find(v => v.name === selectedName) || null;
+        }
+
+        if(!chosenVoice){
+          chosenVoice = voices.find(v => (v.lang || "").toLowerCase().startsWith("ru")) || null;
+        }
+
+        if(chosenVoice){
+          u.voice = chosenVoice;
+        }
+
         speechSynthesis.speak(u);
       }
 
     }catch(e){
       console.error(e);
-      appendChat(currentPersona.id,"assistant","Ошибка соединения с сервером.");
+      appendChat(currentPersona.id, "assistant", "Ошибка соединения с сервером.");
       renderChat(currentPersona.id);
       setStatus("Ошибка");
     }
   }
   window.sendMessage = sendMessage;
 
-  // mic (webview ko‘pincha support qilmaydi)
-  let recognition=null, listening=false;
+  let recognition = null;
+  let listening = false;
+
   function toggleMic(){
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if(!SpeechRecognition){ alert("В WebView микрофон часто не работает. Лучше Chrome."); return; }
+    if(!SpeechRecognition){
+      alert("В этом браузере микрофон может не поддерживаться. Лучше открыть в Chrome.");
+      return;
+    }
+
     if(!recognition){
       recognition = new SpeechRecognition();
-      recognition.lang="ru-RU";
-      recognition.interimResults=false;
-      recognition.onresult=(e)=>{ input.value = e.results?.[0]?.[0]?.transcript || ""; sendMessage(); };
-      recognition.onend=()=>{ listening=false; micBtn.textContent="🎤"; };
+      recognition.lang = "ru-RU";
+      recognition.interimResults = false;
+
+      recognition.onresult = (e) => {
+        input.value = e.results?.[0]?.[0]?.transcript || "";
+        sendMessage();
+      };
+
+      recognition.onend = () => {
+        listening = false;
+        micBtn.textContent = "🎤";
+      };
     }
-    if(!listening){ listening=true; micBtn.textContent="🔴"; recognition.start(); }
-    else recognition.stop();
+
+    if(!listening){
+      listening = true;
+      micBtn.textContent = "🔴";
+      recognition.start();
+    }else{
+      recognition.stop();
+    }
   }
   window.toggleMic = toggleMic;
 
-  input.addEventListener("keydown",(e)=>{ if(e.key==="Enter") sendMessage(); });
+  input.addEventListener("keydown", (e) => {
+    if(e.key === "Enter") sendMessage();
+  });
 
   loadPersonas();
 </script>

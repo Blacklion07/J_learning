@@ -1,10 +1,9 @@
 import os
 import re
-import traceback
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -14,7 +13,7 @@ load_dotenv()
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    raise RuntimeError("GEMINI_API_KEY topilmadi. Render Environment Variables yoki .env ni tekshiring.")
+    raise RuntimeError("GEMINI_API_KEY topilmadi. .env yoki hosting env variables ni tekshiring.")
 
 genai.configure(api_key=GEMINI_API_KEY)
 
@@ -28,8 +27,8 @@ _DASHES_RE = re.compile(r"[–—]+")
 _MULTI_SPACE_RE = re.compile(r"\s+")
 _EMOJI_RE = re.compile(r"[\U00010000-\U0010ffff]", flags=re.UNICODE)
 
+
 def sanitize_for_tts(text: str) -> str:
-    """TTS uchun: belgilarni tozalaydi, lekin javobni KESMAYDI."""
     t = (text or "").strip()
     if not t:
         return ""
@@ -47,6 +46,7 @@ def sanitize_for_tts(text: str) -> str:
     t = _MULTI_SPACE_RE.sub(" ", t).strip()
     return t
 
+
 def sanitize_for_ui(text: str) -> str:
     t = (text or "").strip()
     if not t:
@@ -58,22 +58,20 @@ def sanitize_for_ui(text: str) -> str:
 
 BASE_RULES_RU = """
 Ты — профессиональный русскоязычный собеседник.
-Всегда отвечай на РУССКОМ языке: грамотно, естественно, без смешивания языков.
-Пиши так, чтобы это хорошо звучало В ГОЛОСЕ: простые фразы, живой ритм.
-Не используй разметку, не используй списки с маркерами, не ставь *, /, +, - в тексте.
-Если нужно перечисление — делай в одной строке через запятые.
-Не используй мат, токсичность, угрозы. 18+ контент запрещён.
+Всегда отвечай на русском языке, грамотно и естественно.
+Пиши так, чтобы это хорошо звучало в голосе, простыми и живыми фразами.
+Не используй markdown, не используй списки с маркерами.
+Если нужно перечисление, делай это обычным текстом через запятые.
+Не используй мат, токсичность, угрозы. Контент 18+ запрещён.
 """
 
-# voice_hint: browserda voice.name bo‘yicha topishga yordam beradigan kalit so‘zlar
-# (hamma kompyuterda bir xil bo‘lmaydi, lekin scoring kuchli bo‘ladi)
 PERSONAS: Dict[str, Dict[str, Any]] = {
     "scientist": {
         "label": "🔬 Учёный",
         "tagline": "умно • ясно • уверенно",
         "system": BASE_RULES_RU + """
 Харизма: спокойная уверенность. Ты звучишь как умный человек, который объясняет просто.
-Стиль: короткие абзацы, 1–2 примера, один чёткий вывод.
+Стиль: короткие абзацы, один или два примера, один чёткий вывод.
 """,
         "tts": {
             "enabled": True, "lang": "ru-RU",
@@ -87,7 +85,7 @@ PERSONAS: Dict[str, Dict[str, Any]] = {
         "tagline": "энергично • ярко • дружелюбно",
         "system": BASE_RULES_RU + """
 Харизма: высокая энергия. Тёплый драйв, лёгкая улыбка в голосе.
-Можно 1–2 коротких междометия: "Ого!", "Круто!", но без перебора.
+Можно иногда использовать короткие междометия вроде Ого или Круто, но без перебора.
 """,
         "tts": {
             "enabled": True, "lang": "ru-RU",
@@ -115,7 +113,7 @@ PERSONAS: Dict[str, Dict[str, Any]] = {
         "tagline": "тёпло • с юмором • поддержка",
         "system": BASE_RULES_RU + """
 Харизма: добрый, уверенный, дружелюбный. Лёгкий юмор, но без кринжа.
-Один дружеский вопрос в конце — максимум.
+Один дружеский вопрос в конце максимум.
 """,
         "tts": {
             "enabled": True, "lang": "ru-RU",
@@ -129,7 +127,7 @@ PERSONAS: Dict[str, Dict[str, Any]] = {
         "tagline": "фокус • мотивация • шаги",
         "system": BASE_RULES_RU + """
 Харизма: мотивирующий тренер. Сильная подача, но мягко.
-Дай один короткий план: "сейчас делаем вот это" — в одну строку.
+Дай один короткий план обычным текстом.
 """,
         "tts": {
             "enabled": True, "lang": "ru-RU",
@@ -155,15 +153,15 @@ PERSONAS: Dict[str, Dict[str, Any]] = {
 }
 
 model = genai.GenerativeModel(
-    model_name="models/gemini-3-flash-preview",
+    model_name="gemini-1.5-flash",
     system_instruction="Ты русскоязычный собеседник с переключаемыми персонажами. Следуй инструкциям в запросе."
 )
-
 app = FastAPI()
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -174,6 +172,11 @@ templates = Jinja2Templates(directory="templates")
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     return templates.TemplateResponse("index.html", {"request": request})
+
+
+@app.get("/health")
+def health():
+    return {"ok": True, "service": "AI Voice Chat"}
 
 
 @app.get("/personas")
@@ -221,10 +224,10 @@ async def chat(data: dict):
 {persona["system"].strip()}
 
 [ЖЁСТКИЕ ТРЕБОВАНИЯ]
-- Ответ только на русском, без ошибок.
-- Не использовать маркеры списков, не использовать *, /, +, -, не использовать markdown.
-- Если ответ большой: первые 4–5 предложений сделай особенно связными и "в голос", потом продолжай до полного ответа.
-- Не обрывай мысль. Доводи ответ до конца.
+Ответ только на русском языке, без смешивания языков.
+Не использовать markdown и маркеры списков.
+Если ответ длинный, первые предложения сделай особенно связными и естественными для озвучки.
+Не обрывай мысль и доводи ответ до конца.
 
 [КОНТЕКСТ]
 {format_history(history, limit=10)}
@@ -239,10 +242,11 @@ async def chat(data: dict):
             generation_config={
                 "temperature": 0.72,
                 "top_p": 0.9,
-                "max_output_tokens": 1400,
+                "max_output_tokens": 1200,
             },
         )
-        text = (resp.text or "").strip()
+
+        text = (getattr(resp, "text", "") or "").strip()
         if not text:
             text = "Повтори, пожалуйста, я на секунду отвлёкся."
 
@@ -255,5 +259,14 @@ async def chat(data: dict):
             "tts": persona["tts"],
             "persona": {"id": persona_id, "label": persona["label"], "tagline": persona["tagline"]},
         }
-    except Exception:
-        return {"response": "Ошибка на сервере. Попробуй ещё раз.", "tts": {"enabled": False}, "tts_text": ""}
+
+    except Exception as e:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "error": str(e),
+                "response": "Ошибка на сервере. Попробуй ещё раз.",
+                "tts": {"enabled": False},
+                "tts_text": ""
+            }
+        )
